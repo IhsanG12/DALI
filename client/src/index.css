@@ -1,0 +1,64 @@
+/* Plain, high-contrast styles: volunteers may be tired, rushed, on a small phone. */
+:root {
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --bg: #fafaf7;
+  --card: #ffffff;
+  --border: #d9d9d4;
+  --accent: #1f5f8b;
+  --accent-text: #ffffff;
+  font: 18px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; }
+
+main {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+
+.muted { color: var(--muted); }
+
+input, button { font: inherit; }
+
+input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+}
+
+button {
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  min-height: 48px; /* big enough to tap */
+}
+
+button:disabled { opacity: 0.6; cursor: default; }
+
+.row { display: flex; gap: 8px; margin: 16px 0; }
+
+ul { padding: 0; list-style: none; }
+
+li {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.error { color: #a12a2a; }
