@@ -78,7 +78,13 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 .pill.sent { background: #dff1e5; color: var(--ok); }
 
 .bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
-.status { min-height: 40px; font-weight: 600; font-size: 0.9rem; }
+.where { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.where span { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { flex: none; min-height: 40px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.dot.busy { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } }
 .status.waiting { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
 .status.clear { background: #dff1e5; color: var(--ok); border-color: transparent; }
 

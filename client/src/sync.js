@@ -24,7 +24,8 @@ export function toMatchCard(p) {
 }
 
 // fetch() can hang for a long time on a bad connection, so give up after a while.
-async function fetchWithTimeout(url, options = {}, ms = 15000) {
+// 45 seconds, because our free server falls asleep and can take ~1 minute to wake up.
+async function fetchWithTimeout(url, options = {}, ms = 45000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {

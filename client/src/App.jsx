@@ -48,11 +48,15 @@ export default function App() {
   return (
     <>
       <header className="bar">
-        <div>
-          <strong>Reunite</strong> <span className="muted">· Shelter {shelter}</span>
+        <div className="where">
+          <strong>Reunite</strong>
+          <span className="muted">Shelter {shelter}</span>
         </div>
+        {/* The label only depends on how many records are waiting, so it doesn't
+            flicker every time the app quietly tries to send in the background. */}
         <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
-          {syncing ? "Sending…" : pendingCount ? `${pendingCount} waiting to send` : "All sent ✓"}
+          <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
+          {pendingCount ? `${pendingCount} to send` : "All sent"}
         </button>
       </header>
 
