@@ -9,32 +9,76 @@ import cors from "cors";
 import { pool, setupDatabase } from "./db.js";
 
 const app = express();
-app.use(cors());          // allow our frontend (a different website) to call us
-app.use(express.json());  // turn incoming JSON text into JavaScript objects
+app.use(cors());                          // allow our frontend (a different website) to call us
+app.use(express.json({ limit: "1mb" }));  // turn incoming JSON text into JavaScript objects
 
-// Health check: lets us (and Render) see that the server is alive.
+// Health check: lets the app (and us) see that the server is reachable.
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// Step 1 "hello world": save a note, then read all notes back.
-app.post("/api/test-notes", async (req, res) => {
-  const text = (req.body.text || "").trim();
-  if (!text) return res.status(400).json({ error: "Text is required" });
+// ---------- small helpers to clean up input ----------
+const text = (v, max = 120) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+const age = (v) => {
+  if (v === null || v === undefined || v === "") return null; // unknown, not 0
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0 && n <= 120 ? n : null;
+};
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // $1 is a placeholder. pg fills it in safely, which prevents SQL injection.
-  const result = await pool.query(
-    "INSERT INTO test_notes (text) VALUES ($1) RETURNING *",
-    [text]
-  );
-  res.status(201).json(result.rows[0]);
-});
+// ---------- receive match cards from a shelter ----------
+//
+// Body: { shelterCode, cards: [ { id, hidden, createdAt, person, lookingFor } ] }
+//
+// Connections at shelters drop all the time, so the same card may arrive
+// twice (the device retries if it never heard back). Each card has an id made
+// on the device, and we use "ON CONFLICT DO NOTHING": sending twice is harmless.
+app.post("/api/cards", async (req, res) => {
+  const shelterCode = text(req.body.shelterCode, 40);
+  const cards = Array.isArray(req.body.cards) ? req.body.cards.slice(0, 200) : [];
+  if (!shelterCode) return res.status(400).json({ error: "shelterCode is required" });
 
-app.get("/api/test-notes", async (req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM test_notes ORDER BY created_at DESC LIMIT 20"
-  );
-  res.json(result.rows);
+  const accepted = [];
+  const client = await pool.connect();
+  try {
+    for (const card of cards) {
+      if (!UUID.test(card.id || "")) continue;
+      const hidden = card.hidden === true;
+      // A hidden person's identity is never stored, even if the device sent it.
+      const person = hidden ? {} : card.person || {};
+
+      await client.query("BEGIN");
+      const inserted = await client.query(
+        `INSERT INTO cards (id, shelter_code, hidden, name, age, neighborhood, with_whom, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          card.id, shelterCode, hidden,
+          text(person.name), age(person.age), text(person.neighborhood), text(person.withWhom, 300),
+          new Date(card.createdAt || Date.now()),
+        ]
+      );
+      // Only add searches the first time we see this card.
+      if (inserted.rowCount === 1) {
+        for (const s of (card.lookingFor || []).slice(0, 10)) {
+          if (!text(s.name)) continue;
+          await client.query(
+            "INSERT INTO searches (card_id, name, relationship, age) VALUES ($1, $2, $3, $4)",
+            [card.id, text(s.name), text(s.relationship, 40), age(s.age)]
+          );
+        }
+      }
+      await client.query("COMMIT");
+      accepted.push(card.id);
+    }
+    res.json({ accepted });
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error(err);
+    res.status(500).json({ error: "Could not save cards", accepted });
+  } finally {
+    client.release();
+  }
 });
 
 const PORT = process.env.PORT || 3001;

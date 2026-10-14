@@ -1,73 +1,100 @@
-// App.jsx — the screen the volunteer sees.
+// App.jsx — the frame around every screen: status bar, tabs, automatic sending.
 //
 // A React "component" is just a function that returns what to draw.
 // `useState` holds values that, when changed, make React redraw the screen.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { localDb, getShelterCode, setShelterCode } from "./localDb.js";
+import { syncNow, getLastSyncAt } from "./sync.js";
+import AddPerson from "./AddPerson.jsx";
+import PeopleList from "./PeopleList.jsx";
+import Outbox from "./Outbox.jsx";
 
-// Where the backend lives. Locally it's localhost; on Netlify we set VITE_API_URL.
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const AUTO_SYNC_EVERY_MS = 30_000;
 
 export default function App() {
-  const [text, setText] = useState("");
-  const [notes, setNotes] = useState([]);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [shelter, setShelter] = useState(getShelterCode());
+  const [tab, setTab] = useState("add");
+  const [syncing, setSyncing] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
+  const [lastSyncAt, setLastSyncAt] = useState(getLastSyncAt());
 
-  // Ask the backend for the saved notes.
-  async function loadNotes() {
-    try {
-      const res = await fetch(`${API}/api/test-notes`);
-      setNotes(await res.json());
-      setError("");
-    } catch {
-      setError("Can't reach the server. It may be waking up — try again in a minute.");
-    }
-  }
+  const pendingCount = useLiveQuery(() => localDb.people.where("syncStatus").equals("pending").count(), []) ?? 0;
 
-  // Send a new note to the backend, then reload the list.
-  async function saveNote(e) {
-    e.preventDefault();
-    if (!text.trim()) return;
-    setSaving(true);
-    try {
-      await fetch(`${API}/api/test-notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      setText("");
-      await loadNotes();
-    } catch {
-      setError("Couldn't save. Check the connection.");
-    }
-    setSaving(false);
-  }
+  const send = useCallback(async () => {
+    setSyncing(true);
+    const result = await syncNow();
+    setLastResult(result);
+    setLastSyncAt(getLastSyncAt());
+    setSyncing(false);
+  }, []);
 
-  // Run loadNotes once when the page first opens.
-  useEffect(() => { loadNotes(); }, []);
+  // Automatic sending: try every 30 seconds, and right away when the
+  // browser says the connection came back.
+  useEffect(() => {
+    if (!shelter) return;
+    send();
+    const timer = setInterval(send, AUTO_SYNC_EVERY_MS);
+    window.addEventListener("online", send);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("online", send);
+    };
+  }, [shelter, send]);
+
+  if (!shelter) return <Setup onDone={setShelter} />;
 
   return (
+    <>
+      <header className="bar">
+        <div>
+          <strong>Reunite</strong> <span className="muted">· Shelter {shelter}</span>
+        </div>
+        <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
+          {syncing ? "Sending…" : pendingCount ? `${pendingCount} waiting to send` : "All sent ✓"}
+        </button>
+      </header>
+
+      <nav className="tabs">
+        <button className={tab === "add" ? "on" : ""} onClick={() => setTab("add")}>Add person</button>
+        <button className={tab === "people" ? "on" : ""} onClick={() => setTab("people")}>People here</button>
+        <button className={tab === "outbox" ? "on" : ""} onClick={() => setTab("outbox")}>Outbox</button>
+      </nav>
+
+      <main>
+        {tab === "add" && <AddPerson onSaved={send} />}
+        {tab === "people" && <PeopleList />}
+        {tab === "outbox" && (
+          <Outbox syncing={syncing} lastResult={lastResult} lastSyncAt={lastSyncAt} onSend={send} />
+        )}
+      </main>
+    </>
+  );
+}
+
+// First-time setup: which shelter is this device at?
+// (Temporary — Day 4 replaces this with the real enrollment + PIN login.)
+function Setup({ onDone }) {
+  const [code, setCode] = useState("");
+  function submit(e) {
+    e.preventDefault();
+    const clean = code.trim().toUpperCase();
+    if (!clean) return;
+    setShelterCode(clean);
+    onDone(clean);
+  }
+  return (
     <main>
-      <h1>Reunite</h1>
-      <p className="muted">Step 1 test: frontend → backend → database.</p>
-
-      <form className="row" onSubmit={saveNote}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type a test note"
-        />
-        <button disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+      <form className="stack" onSubmit={submit}>
+        <h1>Reunite</h1>
+        <p className="muted">Helping separated families find each other. Set up this device for your shelter.</p>
+        <label>
+          Shelter code
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. LINCOLN-HS" autoFocus />
+        </label>
+        <button className="primary">Start</button>
       </form>
-
-      {error && <p className="error">{error}</p>}
-
-      <ul>
-        {notes.map((n) => (
-          <li key={n.id}>{n.text}</li>
-        ))}
-      </ul>
     </main>
   );
 }
