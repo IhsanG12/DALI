@@ -25,7 +25,10 @@ export default function Matches({ matches, onChanged }) {
     ...matches.incoming.filter((m) => m.status === "yes"),
     ...matches.outgoing.filter((m) => m.status === "yes"),
   ];
-  const waiting = matches.outgoing.filter((m) => m.status === "waiting");
+  const waiting = [
+    ...matches.incoming.filter((m) => m.status === "answered"),
+    ...matches.outgoing.filter((m) => m.status === "waiting"),
+  ];
 
   async function answer(id, value) {
     setBusy(id);
@@ -123,21 +126,29 @@ export default function Matches({ matches, onChanged }) {
       )}
 
       <section className="stack">
-        <h3>Searches from this shelter ({waiting.length})</h3>
-        {waiting.length === 0 && <p className="muted">No possible matches yet.</p>}
+        <h3>Waiting ({waiting.length})</h3>
+        {waiting.length === 0 && <p className="muted">Nothing waiting on another shelter.</p>}
         <ul className="cards">
-          {waiting.map((m) => {
-            const p = byId.get(m.searcherCardId);
-            return (
+          {waiting.map((m) =>
+            m.status === "answered" ? (
+              <li key={`a${m.id}`}>
+                <div>
+                  <strong>{byId.get(m.foundCardId)?.name || "Someone here"}</strong> said yes to connecting with{" "}
+                  {m.searcherName || "the person who asked to stay private"}.
+                </div>
+                <div className="muted">Waiting for the other shelter to decide.</div>
+              </li>
+            ) : (
               <li key={`o${m.id}`}>
                 <div>
-                  <strong>{p?.name || "Someone here"}</strong> is looking for {m.searchedName}
+                  <strong>{byId.get(m.searcherCardId)?.name || "Someone here"}</strong> is looking for{" "}
+                  {m.searchedName}
                   {m.relationship ? ` (${m.relationship})` : ""}.
                 </div>
                 <div className="muted">Possible match found. Waiting for the other person's answer.</div>
               </li>
-            );
-          })}
+            )
+          )}
         </ul>
       </section>
     </div>

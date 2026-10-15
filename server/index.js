@@ -200,9 +200,14 @@ async function findMatches(newCardIds) {
 app.get("/api/matches", requireDevice, async (req, res) => {
   const me = req.device.shelter_id;
   const incoming = await pool.query(
+    // reverse_status: if the two people are looking for each other, the status
+    // of the other direction. The pair only counts as connected once BOTH
+    // directions are yes, so neither shelter learns anything early.
     `SELECT m.id, m.status, m.reasons, m.found_card_id,
             s.name AS searched_name, s.relationship,
-            sc.hidden AS searcher_hidden, sc.name AS searcher_name, sc.shelter_id AS searcher_shelter
+            sc.hidden AS searcher_hidden, sc.name AS searcher_name, sc.shelter_id AS searcher_shelter,
+            (SELECT r.status FROM matches r JOIN searches rs ON rs.id = r.search_id
+              WHERE rs.card_id = m.found_card_id AND r.found_card_id = s.card_id LIMIT 1) AS reverse_status
        FROM matches m
        JOIN cards fc ON fc.id = m.found_card_id
        JOIN searches s ON s.id = m.search_id
@@ -212,6 +217,10 @@ app.get("/api/matches", requireDevice, async (req, res) => {
     [me]
   );
   const outgoing = await pool.query(
+    // When two people are looking for each other, the same pair shows up twice
+    // (A looking for B, and B looking for A). Each shelter only needs the item
+    // it has to act on, so a search is left out here if the reverse request is
+    // already in this shelter's "needs an answer" list.
     `SELECT m.id, m.status, s.card_id AS searcher_card_id, s.name AS searched_name, s.relationship,
             fc.shelter_id AS found_shelter
        FROM matches m
@@ -219,21 +228,29 @@ app.get("/api/matches", requireDevice, async (req, res) => {
        JOIN cards sc ON sc.id = s.card_id
        JOIN cards fc ON fc.id = m.found_card_id
       WHERE sc.shelter_id = $1
+        AND NOT EXISTS (
+          SELECT 1 FROM matches r JOIN searches rs ON rs.id = r.search_id
+           WHERE rs.card_id = m.found_card_id AND r.found_card_id = s.card_id
+             AND r.status IN ('asking', 'yes'))
       ORDER BY m.created_at DESC`,
     [me]
   );
 
   res.json({
-    incoming: incoming.rows.map((r) => ({
-      id: r.id,
-      status: r.status,
-      foundCardId: r.found_card_id,
-      searchedName: r.searched_name,
-      relationship: r.relationship,
-      searcherName: r.searcher_hidden ? null : r.searcher_name,
-      reasons: r.reasons,
-      otherShelterId: r.status === "yes" ? r.searcher_shelter : null,
-    })),
+    incoming: incoming.rows.map((r) => {
+      const connected = r.status === "yes" && (!r.reverse_status || r.reverse_status === "yes");
+      return {
+        id: r.id,
+        // "answered": this side said yes, the other side hasn't decided yet.
+        status: r.status === "yes" && !connected ? "answered" : r.status,
+        foundCardId: r.found_card_id,
+        searchedName: r.searched_name,
+        relationship: r.relationship,
+        searcherName: r.searcher_hidden ? null : r.searcher_name,
+        reasons: r.reasons,
+        otherShelterId: connected ? r.searcher_shelter : null,
+      };
+    }),
     outgoing: outgoing.rows.map((r) => ({
       id: r.id,
       status: r.status === "yes" ? "yes" : "waiting",
@@ -257,6 +274,21 @@ app.post("/api/matches/:id/answer", requireDevice, async (req, res) => {
     [answer, Number(req.params.id), req.device.shelter_id]
   );
   if (result.rowCount === 0) return res.status(404).json({ error: "No open request with that id for this shelter" });
+
+  // If the other person was ALSO searching for the one who just said yes,
+  // their own search already counts as their wish to connect, so they don't
+  // need to be asked again. Except children: a staff member still decides.
+  if (answer === "yes") {
+    await pool.query(
+      `UPDATE matches r SET status = 'yes', answered_at = now()
+         FROM matches m, searches s, searches rs, cards other
+        WHERE m.id = $1 AND s.id = m.search_id AND rs.id = r.search_id
+          AND rs.card_id = m.found_card_id AND r.found_card_id = s.card_id
+          AND other.id = r.found_card_id AND (other.age IS NULL OR other.age >= 18)
+          AND r.status = 'asking'`,
+      [Number(req.params.id)]
+    );
+  }
   res.json({ ok: true });
 });
 
