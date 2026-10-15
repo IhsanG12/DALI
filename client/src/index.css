@@ -102,3 +102,13 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 button.where { all: unset; cursor: pointer; display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 button.where:focus-visible { outline: 3px solid #9cc3e0; border-radius: 4px; }
 .device { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px; }
+
+.small { font-size: 0.85rem; }
+.code { font-family: ui-monospace, Menlo, Consolas, monospace; background: #ecebe6; border-radius: 4px; padding: 1px 6px; }
+.count { display: inline-block; margin-left: 6px; min-width: 20px; padding: 0 6px; border-radius: 999px; background: #b3261e; color: #fff; font-size: 0.75rem; line-height: 20px; }
+.tabs button.on .count { background: #fff; color: var(--text); }
+.match { gap: 8px !important; }
+.match.yes { border-color: #9fd3b0; background: #f3fbf5; }
+.script { background: #f1f5f9; border-radius: 8px; padding: 10px 12px; font-size: 0.95rem; }
+.match .row { display: flex; gap: 8px; margin: 0; }
+.match .row button { flex: 1; }

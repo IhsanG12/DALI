@@ -11,26 +11,25 @@ export const localDb = new Dexie("reunite");
 // "people" table. The string lists the fields we can search/sort by;
 // other fields can still be stored, they just aren't indexed.
 //   syncStatus: "pending" (waiting to send) or "sent"
-localDb.version(1).stores({
-  people: "id, name, syncStatus, createdAt",
-});
-// Version 2: each record remembers which shelter it was registered at, so a
-// device that switches shelters never sends old records under the new code.
-localDb.version(2).stores({
-  people: "id, name, syncStatus, createdAt, shelterCode",
-}).upgrade((tx) =>
-  tx.table("people").toCollection().modify((p) => {
-    if (!p.shelterCode) p.shelterCode = getShelterCode();
-  })
-);
+localDb.version(1).stores({ people: "id, name, syncStatus, createdAt" });
+localDb.version(2).stores({ people: "id, name, syncStatus, createdAt, shelterCode" });
+// Version 3: records belong to an enrolled shelter (shelterId), not a typed-in code.
+localDb.version(3).stores({ people: "id, name, syncStatus, createdAt, shelterId" });
 
-// The shelter this device belongs to (until the real login is built).
-export function getShelterCode() {
-  try { return localStorage.getItem("shelterCode") || ""; } catch { return ""; }
+// ---------- this device's enrollment ----------
+// { token, shelterId, shelterName, volunteerName }
+// The token is the device's secret pass. The server only knows its hash.
+export function getDevice() {
+  try { return JSON.parse(localStorage.getItem("device")) || null; } catch { return null; }
 }
-export function setShelterCode(code) {
-  try { localStorage.setItem("shelterCode", code); } catch { /* ignore */ }
+export function setDevice(device) {
+  try { localStorage.setItem("device", JSON.stringify(device)); } catch { /* ignore */ }
 }
-export function clearShelterCode() {
-  try { localStorage.removeItem("shelterCode"); } catch { /* ignore */ }
+export function clearDevice() {
+  try {
+    localStorage.removeItem("device");
+    localStorage.removeItem("matches");
+    localStorage.removeItem("shelterCode"); // left over from the old typed-in codes
+  } catch { /* ignore */ }
 }
+export const currentShelterId = () => getDevice()?.shelterId || "";

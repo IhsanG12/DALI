@@ -3,11 +3,11 @@
 
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { localDb, getShelterCode } from "./localDb.js";
+import { localDb, currentShelterId } from "./localDb.js";
 
 export default function PeopleList() {
   const [filter, setFilter] = useState("");
-  const people = useLiveQuery(() => localDb.people.where("shelterCode").equals(getShelterCode()).sortBy("name"), []) || [];
+  const people = useLiveQuery(() => localDb.people.where("shelterId").equals(currentShelterId()).sortBy("name"), []) || [];
   const shown = people.filter((p) => p.name.toLowerCase().includes(filter.trim().toLowerCase()));
 
   return (

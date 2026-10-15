@@ -1,12 +1,12 @@
 // Outbox.jsx — what is waiting to be sent, and a manual "Send now" button.
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "./localDb.js";
+import { localDb, currentShelterId } from "./localDb.js";
 import { toMatchCard } from "./sync.js";
 
-export default function Outbox({ shelter, syncing, lastResult, lastSyncAt, onSend, onSwitchShelter }) {
+export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend, onLeave }) {
   const pending =
-    useLiveQuery(() => localDb.people.where("syncStatus").equals("pending").sortBy("createdAt"), []) || [];
+    useLiveQuery(async () => (await localDb.people.where("shelterId").equals(currentShelterId()).sortBy("createdAt")).filter((p) => p.syncStatus === "pending"), []) || [];
 
   return (
     <div className="stack">
@@ -52,13 +52,17 @@ export default function Outbox({ shelter, syncing, lastResult, lastSyncAt, onSen
       <section className="stack device">
         <h3>This device</h3>
         <p>
-          Registered to shelter <strong>{shelter}</strong>.
+          Set up for <strong>{device.shelterName}</strong> <span className="code">{device.shelterId}</span>
+          {device.volunteerName ? <> by {device.volunteerName}</> : null}.
         </p>
-        <p className="muted">
-          Moving this device to another shelter? Records already saved here stay on the device and
-          still send under {shelter}.
-        </p>
-        <button className="secondary" onClick={onSwitchShelter}>Switch shelter</button>
+        {pending.length > 0 && (
+          <p className="notice">
+            {pending.length} record{pending.length === 1 ? " hasn't" : "s haven't"} been sent yet. If you
+            leave this shelter now, they stay on this device and will only send if it's set up for this
+            shelter again.
+          </p>
+        )}
+        <button className="secondary" onClick={onLeave}>Leave this shelter</button>
       </section>
     </div>
   );
