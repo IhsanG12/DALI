@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { localDb, getShelterCode, setShelterCode } from "./localDb.js";
+import { localDb, getShelterCode, setShelterCode, clearShelterCode } from "./localDb.js";
 import { syncNow, getLastSyncAt } from "./sync.js";
 import AddPerson from "./AddPerson.jsx";
 import PeopleList from "./PeopleList.jsx";
@@ -48,10 +48,10 @@ export default function App() {
   return (
     <>
       <header className="bar">
-        <div className="where">
+        <button className="where" onClick={() => setTab("outbox")} title="Device and shelter settings">
           <strong>Reunite</strong>
           <span className="muted">Shelter {shelter}</span>
-        </div>
+        </button>
         {/* The label only depends on how many records are waiting, so it doesn't
             flicker every time the app quietly tries to send in the background. */}
         <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
@@ -70,7 +70,18 @@ export default function App() {
         {tab === "add" && <AddPerson onSaved={send} />}
         {tab === "people" && <PeopleList />}
         {tab === "outbox" && (
-          <Outbox syncing={syncing} lastResult={lastResult} lastSyncAt={lastSyncAt} onSend={send} />
+          <Outbox
+            shelter={shelter}
+            syncing={syncing}
+            lastResult={lastResult}
+            lastSyncAt={lastSyncAt}
+            onSend={send}
+            onSwitchShelter={() => {
+              clearShelterCode();
+              setShelter("");
+              setTab("add");
+            }}
+          />
         )}
       </main>
     </>

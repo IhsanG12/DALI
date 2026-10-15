@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "./localDb.js";
 import { toMatchCard } from "./sync.js";
 
-export default function Outbox({ syncing, lastResult, lastSyncAt, onSend }) {
+export default function Outbox({ shelter, syncing, lastResult, lastSyncAt, onSend, onSwitchShelter }) {
   const pending =
     useLiveQuery(() => localDb.people.where("syncStatus").equals("pending").sortBy("createdAt"), []) || [];
 
@@ -48,6 +48,18 @@ export default function Outbox({ syncing, lastResult, lastSyncAt, onSend }) {
           </ul>
         </>
       )}
+
+      <section className="stack device">
+        <h3>This device</h3>
+        <p>
+          Registered to shelter <strong>{shelter}</strong>.
+        </p>
+        <p className="muted">
+          Moving this device to another shelter? Records already saved here stay on the device and
+          still send under {shelter}.
+        </p>
+        <button className="secondary" onClick={onSwitchShelter}>Switch shelter</button>
+      </section>
     </div>
   );
 }

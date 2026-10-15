@@ -95,3 +95,7 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 .tabs { display: flex; max-width: 640px; margin: 0 auto; padding: 12px 16px 0; gap: 6px; }
 .tabs button { flex: 1 1 0; min-width: 0; font-size: 0.9rem; padding: 8px 4px; line-height: 1.2; overflow-wrap: anywhere; }
 .tabs button.on { background: var(--text); color: var(--card); border-color: var(--text); }
+
+button.where { all: unset; cursor: pointer; display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+button.where:focus-visible { outline: 3px solid #9cc3e0; border-radius: 4px; }
+.device { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px; }

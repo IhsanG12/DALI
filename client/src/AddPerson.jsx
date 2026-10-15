@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "./localDb.js";
+import { localDb, getShelterCode } from "./localDb.js";
 
 const emptySearch = () => ({ name: "", relationship: "", age: "" });
 
@@ -38,7 +38,7 @@ export default function AddPerson({ onSaved }) {
   const typed = form.name.trim().toLowerCase();
   const similar = useLiveQuery(async () => {
     if (typed.length < 3) return [];
-    const all = await localDb.people.toArray();
+    const all = await localDb.people.where("shelterCode").equals(getShelterCode()).toArray();
     const words = typed.split(/\s+/).filter((w) => w.length >= 3);
     return all.filter((p) => words.some((w) => p.name.toLowerCase().includes(w))).slice(0, 3);
   }, [typed]);
@@ -61,6 +61,7 @@ export default function AddPerson({ onSaved }) {
         .filter((s) => s.name.trim())
         .map((s) => ({ name: s.name.trim(), relationship: s.relationship.trim(), age: toAge(s.age) })),
       hidden: form.hidden,
+      shelterCode: getShelterCode(),
       createdAt: new Date().toISOString(),
       syncStatus: "pending",
     });

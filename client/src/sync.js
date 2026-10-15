@@ -3,7 +3,7 @@
 // This is "store and forward": the device holds records until it can send
 // them, like a letter waiting in an outbox until the mail truck comes.
 
-import { localDb, getShelterCode } from "./localDb.js";
+import { localDb } from "./localDb.js";
 
 export const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -48,13 +48,20 @@ export async function syncNow() {
 
     // Send in small batches: on a weak connection, small requests are more
     // likely to get through, and each batch that succeeds is saved.
+    // Group by shelter, in case this device was moved between shelters.
+    const byShelter = {};
+    for (const p of pending) (byShelter[p.shelterCode] ||= []).push(p);
+    const batches = [];
+    for (const [shelterCode, people] of Object.entries(byShelter)) {
+      for (let i = 0; i < people.length; i += 20) batches.push({ shelterCode, people: people.slice(i, i + 20) });
+    }
+
     let sent = 0;
-    for (let i = 0; i < pending.length; i += 20) {
-      const batch = pending.slice(i, i + 20);
+    for (const { shelterCode, people: batch } of batches) {
       const res = await fetchWithTimeout(`${API}/api/cards`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shelterCode: getShelterCode(), cards: batch.map(toMatchCard) }),
+        body: JSON.stringify({ shelterCode, cards: batch.map(toMatchCard) }),
       });
       if (!res.ok) throw new Error(`Server said ${res.status}`);
       const { accepted } = await res.json();

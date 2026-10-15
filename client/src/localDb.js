@@ -13,6 +13,15 @@ export const localDb = new Dexie("reunite");
 localDb.version(1).stores({
   people: "id, name, syncStatus, createdAt",
 });
+// Version 2: each record remembers which shelter it was registered at, so a
+// device that switches shelters never sends old records under the new code.
+localDb.version(2).stores({
+  people: "id, name, syncStatus, createdAt, shelterCode",
+}).upgrade((tx) =>
+  tx.table("people").toCollection().modify((p) => {
+    if (!p.shelterCode) p.shelterCode = getShelterCode();
+  })
+);
 
 // The shelter this device belongs to (until the real login is built).
 export function getShelterCode() {
@@ -20,4 +29,7 @@ export function getShelterCode() {
 }
 export function setShelterCode(code) {
   try { localStorage.setItem("shelterCode", code); } catch { /* ignore */ }
+}
+export function clearShelterCode() {
+  try { localStorage.removeItem("shelterCode"); } catch { /* ignore */ }
 }
