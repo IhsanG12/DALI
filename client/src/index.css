@@ -18,6 +18,10 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
+/* Never let anything stick out sideways: on phones that makes the browser
+   keep re-zooming the page to fit, which looks like the page is pulsing. */
+html, body { overflow-x: clip; }
+input, .search-row > *, .two > * { min-width: 0; }
 
 main { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
 
@@ -77,7 +81,7 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 .pill.pending { background: var(--warn-bg); color: var(--warn); }
 .pill.sent { background: #dff1e5; color: var(--ok); }
 
-.bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+.bar { flex-wrap: wrap; position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
 .where { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .where span { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status { flex: none; min-height: 40px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
@@ -89,5 +93,5 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 .status.clear { background: #dff1e5; color: var(--ok); border-color: transparent; }
 
 .tabs { display: flex; max-width: 640px; margin: 0 auto; padding: 12px 16px 0; gap: 6px; }
-.tabs button { flex: 1; font-size: 0.9rem; padding: 8px 6px; white-space: nowrap; }
+.tabs button { flex: 1 1 0; min-width: 0; font-size: 0.9rem; padding: 8px 4px; line-height: 1.2; overflow-wrap: anywhere; }
 .tabs button.on { background: var(--text); color: var(--card); border-color: var(--text); }
