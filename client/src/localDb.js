@@ -5,6 +5,7 @@
 
 import Dexie from "dexie";
 
+// (The database keeps its original name so records saved before the rename are kept.)
 export const localDb = new Dexie("reunite");
 
 // "people" table. The string lists the fields we can search/sort by;

@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Reunite",
-        short_name: "Reunite",
+        name: "Tether",
+        short_name: "Tether",
         description: "Helping separated families find each other",
         theme_color: "#1f5f8b",
         background_color: "#f6f5f1",

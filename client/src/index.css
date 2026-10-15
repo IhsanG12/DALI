@@ -81,7 +81,10 @@ ul.cards li { background: var(--card); border: 1px solid var(--border); border-r
 .pill.pending { background: var(--warn-bg); color: var(--warn); }
 .pill.sent { background: #dff1e5; color: var(--ok); }
 
-.bar { flex-wrap: wrap; position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+/* The header scrolls with the page instead of pinning to the top: some browser
+   extensions squash pinned headers, which made it flicker. */
+.bar { background: var(--card); border-bottom: 1px solid var(--border); }
+.bar-inner { max-width: 640px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 16px; }
 .where { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .where span { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status { flex: none; min-height: 40px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }

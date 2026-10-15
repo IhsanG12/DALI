@@ -48,16 +48,18 @@ export default function App() {
   return (
     <>
       <header className="bar">
-        <button className="where" onClick={() => setTab("outbox")} title="Device and shelter settings">
-          <strong>Reunite</strong>
-          <span className="muted">Shelter {shelter}</span>
-        </button>
-        {/* The label only depends on how many records are waiting, so it doesn't
-            flicker every time the app quietly tries to send in the background. */}
-        <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
-          <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
-          {pendingCount ? `${pendingCount} to send` : "All sent"}
-        </button>
+        <div className="bar-inner">
+          <button className="where" onClick={() => setTab("outbox")} title="Device and shelter settings">
+            <strong>Tether</strong>
+            <span className="muted">Shelter {shelter}</span>
+          </button>
+          {/* The label only depends on how many records are waiting, so it doesn't
+              flicker every time the app quietly tries to send in the background. */}
+          <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
+            <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
+            {pendingCount ? `${pendingCount} to send` : "All sent"}
+          </button>
+        </div>
       </header>
 
       <nav className="tabs">
@@ -102,7 +104,7 @@ function Setup({ onDone }) {
   return (
     <main>
       <form className="stack" onSubmit={submit}>
-        <h1>Reunite</h1>
+        <h1>Tether</h1>
         <p className="muted">Helping separated families find each other. Set up this device for your shelter.</p>
         <label>
           Shelter code

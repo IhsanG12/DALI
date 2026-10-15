@@ -1,4 +1,4 @@
-# Reunite
+# Tether
 
 Helping families separated by a hurricane evacuation find each other, built for shelter volunteers working with weak or no internet.
 
