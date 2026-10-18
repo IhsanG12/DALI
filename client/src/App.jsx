@@ -12,6 +12,7 @@ import PeopleList from "./PeopleList.jsx";
 import Matches from "./Matches.jsx";
 import Outbox from "./Outbox.jsx";
 import { ScanQr } from "./Qr.jsx";
+import LockScreen, { makePin, LOCK_AFTER_MS } from "./Lock.jsx";
 import { DEMO_SHELTERS, DEMO_PHRASE } from "./demo.js";
 
 const AUTO_SYNC_EVERY_MS = 30_000;
@@ -23,6 +24,7 @@ export default function App() {
   const [lastResult, setLastResult] = useState(null);
   const [lastSyncAt, setLastSyncAt] = useState(getLastSyncAt());
   const [matches, setMatches] = useState(getCachedMatches());
+  const [locked, setLocked] = useState(Boolean(getDevice()));
 
   const shelterId = device?.shelterId;
   const pendingCount =
@@ -57,6 +59,35 @@ export default function App() {
     };
   }, [shelterId, send]);
 
+  // Lock after a few minutes without taps or typing.
+  useEffect(() => {
+    if (!device || locked) return;
+    let timer = setTimeout(() => setLocked(true), LOCK_AFTER_MS);
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setLocked(true), LOCK_AFTER_MS);
+    };
+    const events = ["pointerdown", "keydown", "scroll"];
+    events.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, reset));
+    };
+  }, [device, locked]);
+
+  if (device && locked) {
+    return (
+      <LockScreen
+        device={device}
+        onUnlock={() => setLocked(false)}
+        onForgot={() => {
+          clearDevice();
+          setDeviceState(null);
+        }}
+      />
+    );
+  }
+
   if (!device) {
     return (
       <Setup
@@ -80,6 +111,7 @@ export default function App() {
           </button>
           {/* The label only depends on how many records are waiting, so it doesn't
               flicker every time the app quietly tries to send in the background. */}
+          <button className="lock-btn" onClick={() => setLocked(true)} title="Lock now">Lock</button>
           <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
             <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
             {pendingCount ? `${pendingCount} to send` : "All sent"}
@@ -125,6 +157,7 @@ function Setup({ onDone }) {
   const [code, setCode] = useState("");
   const [phrase, setPhrase] = useState("");
   const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -134,7 +167,7 @@ function Setup({ onDone }) {
     setError("");
     try {
       const device = await enroll(joinCode.trim(), name.trim(), networkPhrase);
-      onDone({ ...device, joinCode: joinCode.trim().toUpperCase(), phrase: networkPhrase });
+      onDone({ ...device, joinCode: joinCode.trim().toUpperCase(), phrase: networkPhrase, pin: await makePin(pin) });
     } catch (err) {
       setError(
         err.status === 401 || err.status === 400
@@ -171,7 +204,7 @@ function Setup({ onDone }) {
           className="stack card"
           onSubmit={(e) => {
             e.preventDefault();
-            if (code.trim() && phrase.trim()) join(code, phrase);
+            if (code.trim() && phrase.trim() && pin.length >= 4) join(code, phrase);
           }}
         >
           <h2>Set up this device</h2>
@@ -188,7 +221,13 @@ function Setup({ onDone }) {
             <span>Your name <span className="req">(optional)</span></span>
             <input value={name} onChange={(e) => setName(e.target.value)} />
           </label>
-          <button className="primary" disabled={busy || !code.trim() || !phrase.trim()}>
+          <label>
+            Choose a PIN (4–8 digits)
+            <input type="password" inputMode="numeric" autoComplete="new-password" value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} />
+            <small>Tether locks after 5 minutes without use, so a device left on a table doesn't show who is here.</small>
+          </label>
+          <button className="primary" disabled={busy || !code.trim() || !phrase.trim() || pin.length < 4}>
             {busy ? "Checking…" : "Set up this device"}
           </button>
           {error && <p className="error">{error}</p>}

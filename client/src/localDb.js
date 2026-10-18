@@ -23,7 +23,7 @@ localDb.version(3).stores({ people: "id, name, syncStatus, createdAt, shelterId"
 export function getDevice() {
   try {
     const d = JSON.parse(localStorage.getItem("device"));
-    return d?.keys ? d : null; // devices set up before name protection must set up again
+    return d?.keys && d?.pin ? d : null; // devices set up before name protection and PINs must set up again
   } catch { return null; }
 }
 export function setDevice(device) {

@@ -123,3 +123,6 @@ button.link { all: unset; cursor: pointer; color: var(--accent); text-decoration
 details summary { cursor: pointer; font-weight: 600; }
 .privacy { gap: 8px; }
 .privacy .check { border: 0; padding: 4px 0; }
+.bar-inner .lock-btn { margin-left: auto; min-height: 40px; font-size: 0.9rem; padding: 6px 12px; }
+.lock { min-height: 100vh; display: flex; align-items: center; }
+.lock form { width: 100%; }
