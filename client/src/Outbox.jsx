@@ -1,4 +1,4 @@
-// Outbox.jsx — what is waiting to be sent, and a manual "Send now" button.
+// Outbox.jsx — what is waiting to be sent, and a button to send and check for matches right away.
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb, currentShelterId } from "./localDb.js";
@@ -16,10 +16,11 @@ export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend
         {lastSyncAt ? new Date(lastSyncAt).toLocaleString() : "never"}
       </p>
       <p className="muted">
-        Records send automatically whenever there's a connection. You don't need to do anything.
+        Records send automatically every 30 seconds while there's a connection. If you just got a
+        signal for a moment, use the button to send right away and check for new matches.
       </p>
       <button className="primary" onClick={onSend} disabled={syncing}>
-        {syncing ? "Sending…" : "Send now"}
+        {syncing ? "Sending…" : "Send and check for matches now"}
       </button>
       {lastResult && <p className={lastResult.ok ? "ok" : "error"}>{lastResult.message}</p>}
 

@@ -167,7 +167,7 @@ I've never worked in disaster response, so a lot of this is reasoning, not exper
 2. Open the app again in a **private/incognito window** (it acts as a second device) and pick **St. Mary's Parish Hall**.
 3. At Lincoln High, add *Mohammed Haddad, 41*, looking for *Lina Haddad, daughter, 9*, and tick **Protect name**.
 4. At St. Mary's, add *Lina Haddad, 9*, looking for *Muhammad Haddad, father*.
-5. Tap the badge at the top (or **Outbox → Send now**) in each window, then open **Matches** at St. Mary's.
+5. In each window, open **Outbox** and tap **Send and check for matches now**, then open **Matches** at St. Mary's.
 
 The free server sleeps when idle, so give the first request up to a minute.
 
