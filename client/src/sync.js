@@ -5,23 +5,40 @@
 // them, like a letter waiting in an outbox until the mail truck comes.
 
 import { localDb, getDevice } from "./localDb.js";
+import { deriveNetworkKeys, phraseCheck, DEMO_PHRASE_CHECK, nameFingerprints, placeFingerprints, lock, unlock } from "./privacy.js";
 
 export const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Turn a full local record into the small "match card" that leaves the shelter.
-// Location in the shelter is deliberately left out.
-// If the person asked to be hidden, their own details are left out too:
-// only who THEY are looking for goes out.
-export function toMatchCard(p) {
-  return {
-    id: p.id,
-    hidden: p.hidden,
-    createdAt: p.createdAt,
-    person: p.hidden
-      ? null
-      : { name: p.name, age: p.age, neighborhood: p.neighborhood, withWhom: p.withWhom },
-    lookingFor: p.lookingFor,
-  };
+//
+// What leaves, by choice:
+//   normal          name, age, neighborhood, who they're with, who they're looking for
+//   protect name    only fingerprints + a scrambled copy the server can't read
+//   keep hidden     nothing about the person; only who THEY are looking for
+// Where someone is in the shelter never leaves, for anyone.
+export async function toMatchCard(p, keys = getDevice()?.keys) {
+  const protect = p.protected && !p.hidden;
+  const lookingFor = await Promise.all(
+    p.lookingFor.map(async (s) => ({
+      name: p.protected ? undefined : s.name,
+      relationship: s.relationship,
+      age: s.age,
+      nameFp: await nameFingerprints(keys, s.name),
+      enc: p.protected ? await lock(keys, { name: s.name }) : undefined,
+    }))
+  );
+  let person = null;
+  if (!p.hidden) {
+    person = {
+      age: p.age,
+      nameFp: await nameFingerprints(keys, p.name),
+      hoodFp: await placeFingerprints(keys, p.neighborhood || ""),
+      ...(protect
+        ? { enc: await lock(keys, { name: p.name, neighborhood: p.neighborhood, withWhom: p.withWhom }) }
+        : { name: p.name, neighborhood: p.neighborhood, withWhom: p.withWhom }),
+    };
+  }
+  return { id: p.id, hidden: p.hidden, protected: Boolean(p.protected), createdAt: p.createdAt, person, lookingFor };
 }
 
 // fetch() can hang for a long time on a bad connection, so give up after a while.
@@ -49,9 +66,15 @@ async function request(path, { method = "GET", body, ms = 45000 } = {}) {
 }
 
 // Set up this device for a shelter. Needs internet this one time.
-export async function enroll(joinCode, volunteerName) {
+// Only the join code goes to the server. The network phrase stays here: the
+// device turns it into keys locally, so the server never sees it.
+export async function enroll(joinCode, volunteerName, phrase) {
+  const keys = await deriveNetworkKeys(phrase);
+  if ((await phraseCheck(keys)) !== DEMO_PHRASE_CHECK) {
+    throw Object.assign(new Error("That network phrase doesn't look right. Check the shelter card."), { status: 400 });
+  }
   const { token, shelter } = await request("/api/enroll", { method: "POST", body: { joinCode, volunteerName } });
-  return { token, shelterId: shelter.id, shelterName: shelter.name, volunteerName };
+  return { token, shelterId: shelter.id, shelterName: shelter.name, volunteerName, keys };
 }
 
 let running = false;
@@ -74,7 +97,7 @@ export async function syncNow() {
     let sent = 0;
     for (let i = 0; i < pending.length; i += 20) {
       const batch = pending.slice(i, i + 20);
-      const { accepted } = await request("/api/cards", { method: "POST", body: { cards: batch.map(toMatchCard) } });
+      const { accepted } = await request("/api/cards", { method: "POST", body: { cards: await Promise.all(batch.map((p) => toMatchCard(p))) } });
       const now = new Date().toISOString();
       await localDb.people.where("id").anyOf(accepted).modify({ syncStatus: "sent", sentAt: now });
       sent += accepted.length;
@@ -83,7 +106,7 @@ export async function syncNow() {
 
     // Matches are kept on the device too, so volunteers can still see who to
     // talk to when the connection drops again.
-    const matches = await request("/api/matches");
+    const matches = await makeReadable(await request("/api/matches"), device.keys);
     try { localStorage.setItem("matches", JSON.stringify(matches)); } catch { /* ignore */ }
 
     return { ok: true, message: sent ? `Sent ${sent} record${sent === 1 ? "" : "s"}.` : "Up to date.", matches };
@@ -95,6 +118,19 @@ export async function syncNow() {
   } finally {
     running = false;
   }
+}
+
+// Protected names arrive scrambled. Only this shelter device (which knows the
+// network phrase) can unscramble them for the volunteer.
+async function makeReadable(matches, keys) {
+  for (const m of [...matches.incoming, ...matches.outgoing]) {
+    if (!m.searchedName && m.searchedEnc) m.searchedName = (await unlock(keys, m.searchedEnc))?.name || "(protected name)";
+    if (!m.searcherName && m.searcherEnc) {
+      m.searcherName = (await unlock(keys, m.searcherEnc))?.name || "(protected name)";
+      m.searcherProtected = true;
+    }
+  }
+  return matches;
 }
 
 export function getCachedMatches() {

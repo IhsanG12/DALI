@@ -112,3 +112,14 @@ button.where:focus-visible { outline: 3px solid #9cc3e0; border-radius: 4px; }
 .script { background: #f1f5f9; border-radius: 8px; padding: 10px 12px; font-size: 0.95rem; }
 .match .row { display: flex; gap: 8px; margin: 0; }
 .match .row button { flex: 1; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.brand { font-size: 2rem; letter-spacing: -0.02em; }
+.scanner { display: flex; flex-direction: column; gap: 8px; }
+.scanner video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 1; object-fit: cover; }
+.qr { display: block; margin: 8px auto; border-radius: 8px; background: #fff; }
+.plain-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+button.link { all: unset; cursor: pointer; color: var(--accent); text-decoration: underline; }
+details summary { cursor: pointer; font-weight: 600; }
+.privacy { gap: 8px; }
+.privacy .check { border: 0; padding: 4px 0; }

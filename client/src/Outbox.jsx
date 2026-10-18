@@ -2,7 +2,7 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb, currentShelterId } from "./localDb.js";
-import { toMatchCard } from "./sync.js";
+import { ShowQr, joinQrText } from "./Qr.jsx";
 
 export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend, onLeave }) {
   const pending =
@@ -30,21 +30,23 @@ export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend
             Only what's needed to find a match. Where someone is in the shelter never leaves this device.
           </p>
           <ul className="cards">
-            {pending.map((p) => {
-              const card = toMatchCard(p);
-              return (
-                <li key={p.id}>
-                  {card.person ? (
-                    <strong>{card.person.name}</strong>
-                  ) : (
-                    <strong>Hidden person <span className="muted">(name not sent)</span></strong>
-                  )}
-                  {card.lookingFor.length > 0 && (
-                    <div className="muted">Looking for: {card.lookingFor.map((s) => s.name).join(", ")}</div>
-                  )}
-                </li>
-              );
-            })}
+            {pending.map((p) => (
+              <li key={p.id}>
+                {p.hidden ? (
+                  <strong>Hidden person <span className="muted">(nothing about them is sent)</span></strong>
+                ) : p.protected ? (
+                  <strong>Protected name <span className="muted">(sent scrambled; the server can't read it)</span></strong>
+                ) : (
+                  <strong>{p.name}</strong>
+                )}
+                {p.lookingFor.length > 0 && (
+                  <div className="muted">
+                    Looking for:{" "}
+                    {p.protected ? `${p.lookingFor.length} name(s), scrambled` : p.lookingFor.map((s) => s.name).join(", ")}
+                  </div>
+                )}
+              </li>
+            ))}
           </ul>
         </>
       )}
@@ -62,6 +64,14 @@ export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend
             shelter again.
           </p>
         )}
+        <details>
+          <summary>Add another volunteer's device</summary>
+          <p className="muted small">
+            On the other device, open Tether and tap "Scan the shelter's QR code", then scan this.
+            It contains this shelter's join code and the network phrase.
+          </p>
+          {device.joinCode && device.phrase && <ShowQr text={joinQrText(device.joinCode, device.phrase)} label="Shelter join QR code" />}
+        </details>
         <button className="secondary" onClick={onLeave}>Leave this shelter</button>
       </section>
     </div>

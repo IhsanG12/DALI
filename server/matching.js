@@ -57,6 +57,35 @@ export function nameScore(searchedName, cardName) {
   return { first, last };
 }
 
+// Fingerprints: the device turns each name into a few keyed hashes, tagged by
+// kind: "f." exact first name, "p." how the first name sounds, "3." its first
+// three letters, "l." exact last name, "q." how the last name sounds.
+// The server can see that two fingerprints are equal, but not what name made them.
+function fingerprintScore(a = [], b = []) {
+  const B = new Set(b);
+  const has = (kind) => a.some((x) => x.startsWith(kind) && B.has(x));
+  let first = null;
+  if (has("f.")) first = 1;
+  else if (has("p.")) first = 0.85;
+  else if (has("3.")) first = 0.8;
+  if (first === null) return null;
+  const last = has("l.") ? 1 : has("q.") ? 0.85 : 0;
+  return { first, last };
+}
+
+// Use readable names when both sides have them (better fuzzy matching);
+// otherwise fall back to fingerprints, e.g. when someone asked to protect their name.
+export function compareNames(a, b) {
+  if (a.name && b.name) return nameScore(a.name, b.name);
+  if (a.name_fp?.length && b.name_fp?.length) return fingerprintScore(a.name_fp, b.name_fp);
+  return null;
+}
+
+function sameNeighborhood(a, b) {
+  if (a.neighborhood && b.neighborhood) return normalize(a.neighborhood) === normalize(b.neighborhood);
+  return Boolean(a.hood_fp?.length && b.hood_fp?.some((x) => a.hood_fp.includes(x)));
+}
+
 function agesCompatible(a, b) {
   if (a == null || b == null) return { ok: true, close: false };
   const diff = Math.abs(a - b);
@@ -65,13 +94,13 @@ function agesCompatible(a, b) {
 }
 
 // Score one search against one registered (non-hidden) person.
-//   search:     { name, age }
-//   card:       { name, age, neighborhood }
-//   searcher:   the card of the person doing the search (may be hidden)
+//   search:         { name, name_fp, age }
+//   card:           { name, name_fp, age, neighborhood, hood_fp }
+//   searcher:       the card of the person doing the search (may be hidden)
 //   foundsSearches: who the registered person is looking for
 // Returns { score, reasons } or null.
 export function scoreMatch(search, card, searcher, foundsSearches = []) {
-  const n = nameScore(search.name, card.name);
+  const n = compareNames(search, card);
   if (!n) return null;
   const age = agesCompatible(search.age, card.age);
   if (!age.ok) return null;
@@ -83,13 +112,12 @@ export function scoreMatch(search, card, searcher, foundsSearches = []) {
   if (age.close) { score += 15; reasons.push("age matches"); }
 
   // Strongest signal: they're looking for each other.
-  if (searcher.name && foundsSearches.some((fs) => nameScore(fs.name, searcher.name))) {
+  if (!searcher.hidden && foundsSearches.some((fs) => compareNames(fs, searcher))) {
     score += 30;
     reasons.push("they are looking for each other");
   }
 
-  if (searcher.neighborhood && card.neighborhood &&
-      normalize(searcher.neighborhood) === normalize(card.neighborhood)) {
+  if (!searcher.hidden && sameNeighborhood(searcher, card)) {
     score += 10;
     reasons.push("same home neighborhood");
   }

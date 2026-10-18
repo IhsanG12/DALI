@@ -9,6 +9,7 @@ import cors from "cors";
 import crypto from "node:crypto";
 import { pool, setupDatabase } from "./db.js";
 import { scoreMatch, MATCH_THRESHOLD } from "./matching.js";
+import { PRELOADED_SHELTERS } from "./shelters.js";
 
 const app = express();
 app.use(cors());                          // allow our frontend (a different website) to call us
@@ -21,6 +22,9 @@ const age = (v) => {
   const n = Number(v);
   return Number.isInteger(n) && n >= 0 && n <= 120 ? n : null;
 };
+// Fingerprints are short keyed hashes made on the device (base64url text).
+const fingerprints = (v) =>
+  Array.isArray(v) ? v.filter((x) => typeof x === "string" && /^[a-z3]\.[A-Za-z0-9_-]{8,64}$/.test(x)).slice(0, 12) : null;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // We never store secrets (join codes, device tokens) directly, only a hash,
@@ -107,26 +111,36 @@ app.post("/api/cards", requireDevice, async (req, res) => {
     for (const card of cards) {
       if (!UUID.test(card.id || "")) continue;
       const hidden = card.hidden === true;
+      const isProtected = !hidden && card.protected === true;
       // A hidden person's identity is never stored, even if the device sent it.
+      // A protected person's readable details are never stored either: only
+      // fingerprints and the encrypted copy the server can't open.
       const person = hidden ? {} : card.person || {};
+      const readable = isProtected ? {} : person;
 
       await client.query("BEGIN");
       const inserted = await client.query(
-        `INSERT INTO cards (id, shelter_id, hidden, name, age, neighborhood, with_whom, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO cards (id, shelter_id, hidden, protected, name, age, neighborhood, with_whom,
+                            enc, name_fp, hood_fp, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          ON CONFLICT (id) DO NOTHING`,
         [
-          card.id, req.device.shelter_id, hidden,
-          text(person.name), age(person.age), text(person.neighborhood), text(person.withWhom, 300),
+          card.id, req.device.shelter_id, hidden, isProtected,
+          text(readable.name), hidden ? null : age(person.age), text(readable.neighborhood), text(readable.withWhom, 300),
+          isProtected ? text(person.enc, 4000) : null,
+          hidden ? null : fingerprints(person.nameFp),
+          hidden ? null : fingerprints(person.hoodFp),
           new Date(card.createdAt || Date.now()),
         ]
       );
       if (inserted.rowCount === 1) {
         for (const s of (card.lookingFor || []).slice(0, 10)) {
-          if (!text(s.name)) continue;
+          const name = card.protected === true ? null : text(s.name);
+          const fp = fingerprints(s.nameFp);
+          if (!name && !fp) continue;
           await client.query(
-            "INSERT INTO searches (card_id, name, relationship, age) VALUES ($1, $2, $3, $4)",
-            [card.id, text(s.name), text(s.relationship, 40), age(s.age)]
+            "INSERT INTO searches (card_id, name, relationship, age, enc, name_fp) VALUES ($1, $2, $3, $4, $5, $6)",
+            [card.id, name, text(s.relationship, 40), age(s.age), card.protected === true ? text(s.enc, 1000) : null, fp]
           );
         }
         fresh.push(card.id);
@@ -167,7 +181,7 @@ async function findMatches(newCardIds) {
     searchesByCard.get(s.card_id).push(s);
   }
   const isNew = new Set(newCardIds);
-  const findable = cards.filter((c) => !c.hidden && c.name);
+  const findable = cards.filter((c) => !c.hidden && (c.name || c.name_fp?.length));
 
   for (const search of searches) {
     const searcher = cardById.get(search.card_id);
@@ -204,8 +218,9 @@ app.get("/api/matches", requireDevice, async (req, res) => {
     // of the other direction. The pair only counts as connected once BOTH
     // directions are yes, so neither shelter learns anything early.
     `SELECT m.id, m.status, m.reasons, m.found_card_id,
-            s.name AS searched_name, s.relationship,
-            sc.hidden AS searcher_hidden, sc.name AS searcher_name, sc.shelter_id AS searcher_shelter,
+            s.name AS searched_name, s.enc AS searched_enc, s.relationship,
+            sc.hidden AS searcher_hidden, sc.name AS searcher_name, sc.enc AS searcher_enc,
+            sc.shelter_id AS searcher_shelter,
             (SELECT r.status FROM matches r JOIN searches rs ON rs.id = r.search_id
               WHERE rs.card_id = m.found_card_id AND r.found_card_id = s.card_id LIMIT 1) AS reverse_status
        FROM matches m
@@ -221,7 +236,7 @@ app.get("/api/matches", requireDevice, async (req, res) => {
     // (A looking for B, and B looking for A). Each shelter only needs the item
     // it has to act on, so a search is left out here if the reverse request is
     // already in this shelter's "needs an answer" list.
-    `SELECT m.id, m.status, s.card_id AS searcher_card_id, s.name AS searched_name, s.relationship,
+    `SELECT m.id, m.status, s.card_id AS searcher_card_id, s.name AS searched_name, s.enc AS searched_enc, s.relationship,
             fc.shelter_id AS found_shelter
        FROM matches m
        JOIN searches s ON s.id = m.search_id
@@ -245,8 +260,11 @@ app.get("/api/matches", requireDevice, async (req, res) => {
         status: r.status === "yes" && !connected ? "answered" : r.status,
         foundCardId: r.found_card_id,
         searchedName: r.searched_name,
+        searchedEnc: r.searched_enc,
         relationship: r.relationship,
         searcherName: r.searcher_hidden ? null : r.searcher_name,
+        searcherEnc: r.searcher_hidden ? null : r.searcher_enc,
+        searcherHidden: r.searcher_hidden,
         reasons: r.reasons,
         otherShelterId: connected ? r.searcher_shelter : null,
       };
@@ -256,6 +274,7 @@ app.get("/api/matches", requireDevice, async (req, res) => {
       status: r.status === "yes" ? "yes" : "waiting",
       searcherCardId: r.searcher_card_id,
       searchedName: r.searched_name,
+      searchedEnc: r.searched_enc,
       relationship: r.relationship,
       otherShelterId: r.status === "yes" ? r.found_shelter : null,
     })),
@@ -292,23 +311,26 @@ app.post("/api/matches/:id/answer", requireDevice, async (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- demo shelters ----------
+// ---------- preloaded shelters ----------
 //
-// So reviewers can try a match without contacting anyone, the server creates
-// two demo shelters with published join codes (see README). Real shelters get
-// random codes from the admin endpoint. Set DEMO_SHELTERS=off to disable.
-async function ensureDemoShelters() {
-  if (process.env.DEMO_SHELTERS === "off") return;
-  for (const [name, code] of [["Demo Shelter North", "DEMO-NORTH"], ["Demo Shelter South", "DEMO-SOUTH"]]) {
-    const exists = await pool.query("SELECT 1 FROM shelters WHERE join_code_hash = $1", [hash(code)]);
+// The region's official shelters are created on startup if they don't exist
+// yet (see shelters.js). Set PRELOAD_SHELTERS=off to skip.
+async function ensurePreloadedShelters() {
+  if (process.env.PRELOAD_SHELTERS === "off") return;
+  for (const { name, code } of PRELOADED_SHELTERS) {
+    const exists = await pool.query("SELECT 1 FROM shelters WHERE join_code_hash = $1", [hash(normalizeCode(code))]);
     if (exists.rowCount === 0) await createShelter(name, code);
+  }
+  // The old two demo shelters are retired; their codes stop working.
+  for (const code of ["DEMO-NORTH", "DEMO-SOUTH"]) {
+    await pool.query("UPDATE shelters SET join_code_hash = 'retired:' || id WHERE join_code_hash = $1", [hash(code)]);
   }
 }
 
 const PORT = process.env.PORT || 3001;
 
 await setupDatabase();
-await ensureDemoShelters();
+await ensurePreloadedShelters();
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

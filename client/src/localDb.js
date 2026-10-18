@@ -17,10 +17,14 @@ localDb.version(2).stores({ people: "id, name, syncStatus, createdAt, shelterCod
 localDb.version(3).stores({ people: "id, name, syncStatus, createdAt, shelterId" });
 
 // ---------- this device's enrollment ----------
-// { token, shelterId, shelterName, volunteerName }
+// { token, shelterId, shelterName, volunteerName, keys }
+// keys come from the shelter network phrase and never leave this device.
 // The token is the device's secret pass. The server only knows its hash.
 export function getDevice() {
-  try { return JSON.parse(localStorage.getItem("device")) || null; } catch { return null; }
+  try {
+    const d = JSON.parse(localStorage.getItem("device"));
+    return d?.keys ? d : null; // devices set up before name protection must set up again
+  } catch { return null; }
 }
 export function setDevice(device) {
   try { localStorage.setItem("device", JSON.stringify(device)); } catch { /* ignore */ }

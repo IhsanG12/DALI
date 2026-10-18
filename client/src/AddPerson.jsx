@@ -17,6 +17,7 @@ const emptyForm = () => ({
   withWhom: "",
   lookingFor: [emptySearch()],
   hidden: false,
+  protected: false,
 });
 
 export default function AddPerson({ onSaved }) {
@@ -61,6 +62,7 @@ export default function AddPerson({ onSaved }) {
         .filter((s) => s.name.trim())
         .map((s) => ({ name: s.name.trim(), relationship: s.relationship.trim(), age: toAge(s.age) })),
       hidden: form.hidden,
+      protected: form.protected || form.hidden,
       shelterId: currentShelterId(),
       createdAt: new Date().toISOString(),
       syncStatus: "pending",
@@ -133,13 +135,23 @@ export default function AddPerson({ onSaved }) {
         <small>Never sent out. Only used so a volunteer can find them later.</small>
       </label>
 
-      <label className="check">
-        <input type="checkbox" checked={form.hidden} onChange={set("hidden")} />
-        <span>
-          <strong>Keep hidden.</strong> Nobody can search for this person. Their details never
-          leave this shelter, but they can still search for others.
-        </span>
-      </label>
+      <fieldset className="privacy">
+        <legend>Privacy (ask them)</legend>
+        <label className="check">
+          <input type="checkbox" checked={form.protected || form.hidden} disabled={form.hidden} onChange={set("protected")} />
+          <span>
+            <strong>Protect name.</strong> Family can still find them, but their name is scrambled on this
+            device before it's sent. Tether's own server can't read it; only shelter devices can.
+          </span>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={form.hidden} onChange={set("hidden")} />
+          <span>
+            <strong>Keep hidden.</strong> Nobody can search for this person. Their details never leave
+            this shelter, but they can still search for others.
+          </span>
+        </label>
+      </fieldset>
 
       <button type="submit" className="primary">Save</button>
       {message && <p className="ok" role="status">{message}</p>}

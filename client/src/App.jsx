@@ -11,6 +11,8 @@ import AddPerson from "./AddPerson.jsx";
 import PeopleList from "./PeopleList.jsx";
 import Matches from "./Matches.jsx";
 import Outbox from "./Outbox.jsx";
+import { ScanQr } from "./Qr.jsx";
+import { DEMO_SHELTERS, DEMO_PHRASE } from "./demo.js";
 
 const AUTO_SYNC_EVERY_MS = 30_000;
 
@@ -116,24 +118,26 @@ export default function App() {
   );
 }
 
-// First-time setup: join a real shelter with the code from its coordinator.
-// This needs internet once. After that, the device works offline.
+// First-time setup: join a real, preloaded shelter.
+// Scan the QR on the shelter's card, or type the join code and network phrase.
+// Needs internet once; after that the device works offline.
 function Setup({ onDone }) {
   const [code, setCode] = useState("");
+  const [phrase, setPhrase] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
-  async function submit(e) {
-    e.preventDefault();
-    if (!code.trim()) return;
+  async function join(joinCode, networkPhrase) {
     setBusy(true);
     setError("");
     try {
-      onDone(await enroll(code.trim(), name.trim()));
+      const device = await enroll(joinCode.trim(), name.trim(), networkPhrase);
+      onDone({ ...device, joinCode: joinCode.trim().toUpperCase(), phrase: networkPhrase });
     } catch (err) {
       setError(
-        err.status === 401
+        err.status === 401 || err.status === 400
           ? err.message
           : "Couldn't reach the server. Setting up a device needs a connection once. Try again in a minute."
       );
@@ -141,26 +145,74 @@ function Setup({ onDone }) {
     setBusy(false);
   }
 
+  const onScan = useCallback((r) => {
+    setScanning(false);
+    setCode(r.joinCode);
+    setPhrase(r.phrase);
+  }, []);
+
   return (
     <main>
-      <form className="stack" onSubmit={submit}>
-        <h1>Tether</h1>
-        <p className="muted">Helping separated families find each other. Set up this device for your shelter.</p>
-        <label>
-          Shelter join code
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="From your shelter coordinator" autoFocus />
-        </label>
-        <label>
-          Your name <span className="req">(optional)</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <button className="primary" disabled={busy}>{busy ? "Checking…" : "Set up this device"}</button>
-        {error && <p className="error">{error}</p>}
-        <p className="muted small">
-          Trying the demo? Use <strong>DEMO-NORTH</strong> in one window and <strong>DEMO-SOUTH</strong> in a
-          private window to act as two shelters.
-        </p>
-      </form>
+      <div className="stack">
+        <div>
+          <h1 className="brand">Tether</h1>
+          <p className="muted">Helping families separated by the evacuation find each other.</p>
+        </div>
+
+        {scanning ? (
+          <ScanQr onResult={onScan} onCancel={() => setScanning(false)} />
+        ) : (
+          <button type="button" className="primary" onClick={() => setScanning(true)}>
+            Scan the shelter's QR code
+          </button>
+        )}
+
+        <form
+          className="stack card"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (code.trim() && phrase.trim()) join(code, phrase);
+          }}
+        >
+          <h2>Set up this device</h2>
+          <label>
+            Shelter join code
+            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="From the shelter's card" autoCapitalize="characters" />
+          </label>
+          <label>
+            Network phrase
+            <input value={phrase} onChange={(e) => setPhrase(e.target.value)} placeholder="Four words, also on the card" autoCapitalize="none" />
+            <small>Stays on this device. It's never sent to our server.</small>
+          </label>
+          <label>
+            <span>Your name <span className="req">(optional)</span></span>
+            <input value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <button className="primary" disabled={busy || !code.trim() || !phrase.trim()}>
+            {busy ? "Checking…" : "Set up this device"}
+          </button>
+          {error && <p className="error">{error}</p>}
+        </form>
+
+        <details className="card demo">
+          <summary>Reviewing Tether? Use a demo shelter</summary>
+          <p className="muted small">
+            These shelters were registered "before the storm". Open Tether in a normal window as one
+            shelter and in a private window as another to try a match.
+          </p>
+          <ul className="plain-list">
+            {DEMO_SHELTERS.map((s) => (
+              <li key={s.code}>
+                <button type="button" className="link" onClick={() => { setCode(s.code); setPhrase(DEMO_PHRASE); }}>
+                  {s.name}
+                </button>{" "}
+                <span className="code">{s.code}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="small">Network phrase: <span className="code">{DEMO_PHRASE}</span></p>
+        </details>
+      </div>
     </main>
   );
 }

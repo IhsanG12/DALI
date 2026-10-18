@@ -65,7 +65,8 @@ export default function Matches({ matches, onChanged }) {
                   {p?.location && <span className="muted"> · {p.location}</span>}
                 </div>
                 <div>
-                  {m.searcherName ? <strong>{m.searcherName}</strong> : "Someone who asked to stay private"}{" "}
+                  {m.searcherName ? <strong>{m.searcherName}</strong> : "Someone who asked to stay hidden"}
+                  {m.searcherProtected && <span className="badge">name protected</span>}{" "}
                   is looking for <strong>{m.searchedName}</strong>
                   {m.relationship ? `, who they say is their ${m.relationship}.` : "."}
                 </div>
@@ -107,7 +108,7 @@ export default function Matches({ matches, onChanged }) {
                   <div>
                     <strong>{here?.name || "Someone here"}</strong> and{" "}
                     {m.foundCardId
-                      ? m.searcherName || "the person who asked to stay private"
+                      ? m.searcherName || "the person who asked to stay hidden"
                       : m.searchedName}{" "}
                     agreed to connect.
                   </div>
@@ -134,7 +135,7 @@ export default function Matches({ matches, onChanged }) {
               <li key={`a${m.id}`}>
                 <div>
                   <strong>{byId.get(m.foundCardId)?.name || "Someone here"}</strong> said yes to connecting with{" "}
-                  {m.searcherName || "the person who asked to stay private"}.
+                  {m.searcherName || "the person who asked to stay hidden"}.
                 </div>
                 <div className="muted">Waiting for the other shelter to decide.</div>
               </li>

@@ -64,6 +64,15 @@ export async function setupDatabase() {
     ALTER TABLE cards ADD COLUMN IF NOT EXISTS shelter_id TEXT;
     ALTER TABLE cards DROP COLUMN IF EXISTS shelter_code;
 
+    -- Name protection: every name also arrives as "fingerprints" (keyed hashes
+    -- made on the shelter device). The server can tell two fingerprints are the
+    -- same without knowing the name. Protected people send ONLY fingerprints
+    -- plus an encrypted copy (enc) that only shelter devices can unlock.
+    ALTER TABLE cards ADD COLUMN IF NOT EXISTS protected BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE cards ADD COLUMN IF NOT EXISTS enc TEXT;
+    ALTER TABLE cards ADD COLUMN IF NOT EXISTS name_fp TEXT[];
+    ALTER TABLE cards ADD COLUMN IF NOT EXISTS hood_fp TEXT[];
+
     CREATE TABLE IF NOT EXISTS searches (
       id            SERIAL PRIMARY KEY,
       card_id       UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
@@ -71,6 +80,10 @@ export async function setupDatabase() {
       relationship  TEXT,
       age           INTEGER
     );
+
+    ALTER TABLE searches ALTER COLUMN name DROP NOT NULL;
+    ALTER TABLE searches ADD COLUMN IF NOT EXISTS enc TEXT;
+    ALTER TABLE searches ADD COLUMN IF NOT EXISTS name_fp TEXT[];
 
     -- status: 'asking'   – waiting for the found person's answer
     --         'yes'      – they agreed; both shelters may now see each other's id
