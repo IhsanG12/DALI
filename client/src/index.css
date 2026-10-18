@@ -132,23 +132,23 @@ ul.cards li { background: var(--sheet); border: 1.5px solid var(--line); border-
 .pill.sent { background: var(--safe-bg); color: var(--safe); }
 
 /* ---------- header ---------- */
-.bar { background: var(--ink); color: #fff; }
-.bar-inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 8px; padding: 10px 16px; }
-button.where { all: unset; cursor: pointer; display: flex; flex-direction: column; min-width: 0; margin-right: auto; line-height: 1.2; }
-button.where:focus-visible { outline: 3px solid var(--signal); border-radius: 4px; }
-.where strong { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; }
-.where span { font-size: 0.82rem; color: #b9cfcd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-top { background: var(--ink); color: #fff; }
+.tt-top-inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 8px; padding: 10px 16px; }
+button.tt-where { all: unset; cursor: pointer; display: flex; flex-direction: column; min-width: 0; margin-right: auto; line-height: 1.2; }
+button.tt-where:focus-visible { outline: 3px solid var(--signal); border-radius: 4px; }
+.tt-where strong { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; }
+.tt-where span { font-size: 0.82rem; color: #b9cfcd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.icon-btn { min-height: 40px; min-width: 40px; padding: 0; display: inline-grid; place-items: center; background: transparent; border-color: #3c5958; color: #fff; }
-.icon-btn svg { width: 20px; height: 20px; }
+.tt-icon { min-height: 40px; min-width: 40px; padding: 0; display: inline-grid; place-items: center; background: transparent; border-color: #3c5958; color: #fff; }
+.tt-icon svg { width: 20px; height: 20px; }
 
-.status { flex: none; min-height: 40px; padding: 6px 12px; border: 0; font-size: 0.88rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
-.status.waiting { background: var(--signal); color: #2b2000; }
-.status.clear { background: var(--safe-bg); color: var(--safe); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.dot.busy { animation: pulse 1s ease-in-out infinite; }
+.tt-sync { flex: none; min-height: 40px; padding: 6px 12px; border: 0; font-size: 0.88rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.tt-sync.waiting { background: var(--signal); color: #2b2000; }
+.tt-sync.clear { background: var(--safe-bg); color: var(--safe); }
+.tt-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.tt-dot.busy { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.2; } }
-@media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tt-dot.busy { animation: none; } }
 
 /* The tether: two points joined by a line. Used in the logo and on connected matches. */
 .tether-mark { display: inline-block; width: 26px; height: 10px; flex: none; }
@@ -201,3 +201,7 @@ ul.cards li.match.yes { border-left-color: var(--safe); }
 
 .toast { background: var(--safe-bg); color: var(--safe); font-weight: 700; border-radius: 8px; padding: 10px 12px; border-left: 4px solid var(--safe); }
 .badge.flat { margin-left: 0; }
+
+/* Keep the top bar's layout even if an extension injects generic rules. */
+.tt-top { display: block !important; width: 100% !important; transform: none !important; }
+.tt-top-inner { display: flex !important; width: auto !important; }
