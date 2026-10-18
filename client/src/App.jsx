@@ -61,6 +61,21 @@ export default function App() {
     };
   }, [shelterId, send]);
 
+  // Two tabs of the same browser share one device's storage. If another tab
+  // sets up or leaves a shelter, follow it right away, so this tab never keeps
+  // showing the old shelter while actually saving to the new one.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== "device" && e.key !== null) return;
+      const d = getDevice();
+      setDeviceState(d);
+      setMatches(getCachedMatches());
+      setTab("add");
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   // Lock after a few minutes without taps or typing.
   useEffect(() => {
     if (!device || locked) return;
