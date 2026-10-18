@@ -200,3 +200,4 @@ ul.cards li.match.yes { border-left-color: var(--safe); }
 .privacy-table th, .privacy-table td { border-bottom: 1px solid var(--line); padding: 8px 4px; text-align: left; vertical-align: top; }
 
 .toast { background: var(--safe-bg); color: var(--safe); font-weight: 700; border-radius: 8px; padding: 10px 12px; border-left: 4px solid var(--safe); }
+.badge.flat { margin-left: 0; }

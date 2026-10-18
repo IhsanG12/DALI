@@ -23,7 +23,11 @@ export default function PeopleList() {
               <span className={`pill ${p.syncStatus}`}>{p.syncStatus === "sent" ? "Sent" : "Waiting to send"}</span>
             </div>
             {p.location && <div className="muted">{p.location}</div>}
-            {p.hidden && <div className="badge">Hidden: can search, can't be found</div>}
+            {p.hidden ? (
+              <div><span className="badge flat">Hidden: can search, can't be found</span></div>
+            ) : p.protected ? (
+              <div><span className="badge flat">Name protected: our server can't read it</span></div>
+            ) : null}
             {p.lookingFor.length > 0 && (
               <div className="muted">Looking for: {p.lookingFor.map((s) => s.name + (s.relationship ? ` (${s.relationship})` : "")).join(", ")}</div>
             )}
