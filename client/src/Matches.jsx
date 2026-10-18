@@ -112,8 +112,10 @@ export default function Matches({ matches, onChanged }) {
                       : m.searchedName}{" "}
                     agreed to connect.
                   </div>
-                  <div>
-                    Other shelter: <strong className="code">{m.otherShelterId}</strong>
+                  <div className="link-line">
+                    <span>Here</span>
+                    <span className="rope" aria-hidden="true" />
+                    <span className="code">{m.otherShelterId}</span>
                   </div>
                   <div className="muted small">
                     Contact your coordinator with this shelter id to arrange a supervised reunion at a

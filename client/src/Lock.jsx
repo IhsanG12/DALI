@@ -7,6 +7,7 @@
 // The PIN itself is never stored: only a slow, salted hash of it.
 
 import { useState } from "react";
+import TetherMark from "./TetherMark.jsx";
 
 const enc = new TextEncoder();
 const b64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
@@ -48,7 +49,7 @@ export default function LockScreen({ device, onUnlock, onForgot }) {
   return (
     <main className="lock">
       <form className="stack card" onSubmit={submit}>
-        <h1 className="brand">Tether</h1>
+        <h1 className="brand"><TetherMark /> Tether</h1>
         <p>
           <strong>{device.shelterName}</strong>
           {device.volunteerName ? <span className="muted"> · {device.volunteerName}</span> : null}

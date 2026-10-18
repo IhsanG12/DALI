@@ -3,7 +3,7 @@
 // Only the name is required, so someone in a long line can be registered in
 // seconds and the rest filled in later.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb, currentShelterId } from "./localDb.js";
 
@@ -22,7 +22,15 @@ const emptyForm = () => ({
 
 export default function AddPerson({ onSaved }) {
   const [form, setForm] = useState(emptyForm());
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(null); // { ok, text }
+  const nameInput = useRef(null);
+
+  // Confirmations fade away on their own so the form is clean for the next person.
+  useEffect(() => {
+    if (!message?.ok) return;
+    const t = setTimeout(() => setMessage(null), 5000);
+    return () => clearTimeout(t);
+  }, [message]);
 
   // Change one field of the form.
   const set = (field) => (e) =>
@@ -47,7 +55,8 @@ export default function AddPerson({ onSaved }) {
   async function save(e) {
     e.preventDefault();
     if (!form.name.trim()) {
-      setMessage("Please enter a name (or a description, like “woman in red jacket”).");
+      setMessage({ ok: false, text: "Enter a name first. A description like “woman in red jacket” is fine." });
+      nameInput.current?.focus();
       return;
     }
     const toAge = (v) => (v === "" ? null : Number(v));
@@ -67,18 +76,26 @@ export default function AddPerson({ onSaved }) {
       createdAt: new Date().toISOString(),
       syncStatus: "pending",
     });
-    setMessage(`Saved ${form.name.trim()} on this device.`);
+    setMessage({ ok: true, text: `Saved ${form.name.trim()}. Ready for the next person.` });
     setForm(emptyForm());
+    // Back to the top, cursor in the name field: the next person is usually waiting.
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    nameInput.current?.focus({ preventScroll: true });
     onSaved?.();
   }
 
   return (
     <form onSubmit={save} className="stack">
       <h2>Add a person</h2>
+      {message && (
+        <p className={message.ok ? "toast" : "error"} role="status">
+          {message.text}
+        </p>
+      )}
 
       <label>
         <span>Name <span className="req">(required)</span></span>
-        <input value={form.name} onChange={set("name")} autoComplete="off" />
+        <input ref={nameInput} value={form.name} onChange={set("name")} autoComplete="off" />
         <small>If they won't give a name, a nickname or short description is fine.</small>
       </label>
 
@@ -111,7 +128,7 @@ export default function AddPerson({ onSaved }) {
         {form.lookingFor.map((s, i) => (
           <div className="search-row" key={i}>
             <input placeholder="Name" value={s.name} onChange={setSearch(i, "name")} />
-            <input placeholder="Relationship (son, mother…)" value={s.relationship} onChange={setSearch(i, "relationship")} />
+            <input placeholder="Relationship" value={s.relationship} onChange={setSearch(i, "relationship")} />
             <input placeholder="Age" type="number" inputMode="numeric" min="0" max="120" value={s.age} onChange={setSearch(i, "age")} />
           </div>
         ))}
@@ -154,7 +171,6 @@ export default function AddPerson({ onSaved }) {
       </fieldset>
 
       <button type="submit" className="primary">Save</button>
-      {message && <p className="ok" role="status">{message}</p>}
     </form>
   );
 }

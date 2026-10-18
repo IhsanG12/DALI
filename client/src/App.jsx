@@ -13,6 +13,7 @@ import Matches from "./Matches.jsx";
 import Outbox from "./Outbox.jsx";
 import { ScanQr } from "./Qr.jsx";
 import Guide from "./Guide.jsx";
+import TetherMark from "./TetherMark.jsx";
 import LockScreen, { makePin, LOCK_AFTER_MS } from "./Lock.jsx";
 import { DEMO_SHELTERS, DEMO_PHRASE } from "./demo.js";
 
@@ -106,14 +107,22 @@ export default function App() {
     <>
       <header className="bar">
         <div className="bar-inner">
-          <button className="where" onClick={() => setTab("outbox")} title="Device and shelter settings">
-            <strong>Tether</strong>
-            <span className="muted">{device.shelterName}</span>
+          <button className="where" onClick={() => setTab("outbox")} title="This device and shelter">
+            <strong><TetherMark /> Tether</strong>
+            <span>{device.shelterName}</span>
+          </button>
+          <button className="icon-btn" onClick={() => setTab("guide")} aria-label="Volunteer guide" title="Volunteer guide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" /><circle cx="12" cy="17.5" r=".6" fill="currentColor" />
+            </svg>
+          </button>
+          <button className="icon-btn" onClick={() => setLocked(true)} aria-label="Lock Tether" title="Lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            </svg>
           </button>
           {/* The label only depends on how many records are waiting, so it doesn't
               flicker every time the app quietly tries to send in the background. */}
-          <button className="lock-btn" onClick={() => setTab("guide")} title="Volunteer guide">Guide</button>
-          <button className="lock-btn" onClick={() => setLocked(true)} title="Lock now">Lock</button>
           <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
             <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
             {pendingCount ? `${pendingCount} to send` : "All sent"}
@@ -191,7 +200,7 @@ function Setup({ onDone }) {
     <main>
       <div className="stack">
         <div>
-          <h1 className="brand">Tether</h1>
+          <h1 className="brand"><TetherMark /> Tether</h1>
           <p className="muted">Helping families separated by the evacuation find each other.</p>
         </div>
 
@@ -258,3 +267,4 @@ function Setup({ onDone }) {
     </main>
   );
 }
+
