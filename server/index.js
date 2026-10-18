@@ -243,6 +243,8 @@ app.get("/api/matches", requireDevice, async (req, res) => {
        JOIN cards sc ON sc.id = s.card_id
        JOIN cards fc ON fc.id = m.found_card_id
       WHERE sc.shelter_id = $1
+        -- Both people at this same shelter: it's already in "needs an answer".
+        AND fc.shelter_id <> $1
         AND NOT EXISTS (
           SELECT 1 FROM matches r JOIN searches rs ON rs.id = r.search_id
            WHERE rs.card_id = m.found_card_id AND r.found_card_id = s.card_id
