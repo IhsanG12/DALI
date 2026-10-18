@@ -12,6 +12,7 @@ import PeopleList from "./PeopleList.jsx";
 import Matches from "./Matches.jsx";
 import Outbox from "./Outbox.jsx";
 import { ScanQr } from "./Qr.jsx";
+import Guide from "./Guide.jsx";
 import LockScreen, { makePin, LOCK_AFTER_MS } from "./Lock.jsx";
 import { DEMO_SHELTERS, DEMO_PHRASE } from "./demo.js";
 
@@ -111,6 +112,7 @@ export default function App() {
           </button>
           {/* The label only depends on how many records are waiting, so it doesn't
               flicker every time the app quietly tries to send in the background. */}
+          <button className="lock-btn" onClick={() => setTab("guide")} title="Volunteer guide">Guide</button>
           <button className="lock-btn" onClick={() => setLocked(true)} title="Lock now">Lock</button>
           <button className={`status ${pendingCount ? "waiting" : "clear"}`} onClick={() => setTab("outbox")}>
             <span className={`dot ${syncing ? "busy" : ""}`} aria-hidden="true" />
@@ -129,6 +131,7 @@ export default function App() {
       </nav>
 
       <main>
+        {tab === "guide" && <Guide onClose={() => setTab("add")} />}
         {tab === "add" && <AddPerson onSaved={send} />}
         {tab === "people" && <PeopleList />}
         {tab === "matches" && <Matches matches={matches} onChanged={send} />}
