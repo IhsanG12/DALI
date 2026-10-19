@@ -92,7 +92,7 @@ A **Guide** button at the top walks volunteers through all of this, including th
 
 ## Immigrants and people afraid of being identified
 
-This was the hardest group to design for, and the one I focused on most after feedback during DALI help hours. An undocumented person may not want *anyone*, including the people running Tether, to have their name in a database.
+This was the hardest group to design for and the one I focused on most after feedback during DALI help hours. An undocumented person may not want *anyone*, including the people running Tether, to have their name even in the database.
 
 So **Protect name** means the name is scrambled **on the shelter device, before it's ever sent**. Here's what each party can see:
 
@@ -102,31 +102,92 @@ So **Protect name** means the name is scrambled **on the shelter device, before 
 | **Protect name** | Everything | **Age, plus relationship words** like "daughter". Name, neighborhood and the names they're searching for are unreadable | Name and claim, after a match |
 | **Keep hidden** | Everything | **Nothing about them.** Only scrambled fingerprints of who *they* are looking for (plus relationship and rough age) | Only "someone who asked to stay hidden" |
 
-Where someone is sleeping in the shelter never leaves the device, for anyone.
+<details>
+<summary><b>This is the technical bit as to how our server match names it can't read?</b> (click to see the code)</summary>
 
-**How the server matches names it can't read.** Every shelter device in the region shares a secret *network phrase*, printed on the shelter cards and inside their QR codes. The phrase **never goes to the server**: the device turns it into two keys locally.
-- One key **scrambles** protected details (AES-GCM encryption), so only another shelter device can read them.
-- The other makes **fingerprints**: short keyed hashes of the first name, last name, how each one sounds (Soundex, so *Mohammed* and *Muhammad* match), and the first three letters. The server can see that two fingerprints are the same, but it can't turn a fingerprint back into a name, and without the key it can't even test guesses.
+<br>
 
-I checked the actual database after a test run: Mohammed's row has no name, no neighborhood and no readable searches. It holds only scrambled text and fingerprints.
+Every shelter device in the region shares a secret **network phrase**, printed on the shelter cards and inside their QR codes. It **never goes to the server**: each device turns it into two keys locally, one to **scramble** protected details and one to make **fingerprints** of names. The server can tell that two fingerprints are equal, but it can't turn one back into a name. Full code: [`client/src/privacy.js`](https://github.com/IhsanG12/DALI/blob/main/client/src/privacy.js) (device) and [`server/matching.js`](https://github.com/IhsanG12/DALI/blob/main/server/matching.js) (server).
 
-**What this doesn't protect** (I'd rather say it than have a reviewer find it):
-- If Lina's volunteer types "Muhammad Haddad" into *her* search and **her** record isn't protected, that search name is stored readably. Someone else can reveal your name by searching for you. A fix would be to scramble every search, at some cost to matching typos.
+**1. The phrase becomes two keys, on the device.** PBKDF2 runs 200,000 rounds on purpose, so guessing phrases is slow.
+
+```js
+export async function deriveNetworkKeys(phrase) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(normalizePhrase(phrase)), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: enc.encode("tether-network-v1"), iterations: 200_000, hash: "SHA-256" },
+    base, 512
+  );
+  const raw = new Uint8Array(bits);
+  return { lock: b64(raw.slice(0, 32)), fingerprint: b64(raw.slice(32)) }; // two 256-bit keys
+}
+```
+
+**2. A protected name is scrambled with AES-GCM** before it leaves the device. Only a device with the same phrase can unlock it.
+
+```js
+export async function lock(keys, obj) {
+  const key = await crypto.subtle.importKey("raw", unb64(keys.lock), "AES-GCM", false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));          // new random value every time
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(obj)));
+  return `${b64(iv)}.${b64(ct)}`;
+}
+```
+
+**3. Every name also becomes fingerprints:** keyed hashes (HMAC-SHA-256) of the exact name, how it sounds (Soundex), and its first three letters. The same name always gives the same fingerprint, but without the key you can't reverse it or even test a guess.
+
+```js
+export async function nameFingerprints(keys, name) {
+  const words = normalizeName(name).split(" ");               // "José García" -> ["jose", "garcia"]
+  const first = words[0], last = words.length > 1 ? words.at(-1) : null;
+  const parts = [["f", first], ["p", soundex(first)], ["3", first.slice(0, 3)]];
+  if (last) parts.push(["l", last], ["q", soundex(last)]);
+  return Promise.all(parts.map(async ([kind, value]) =>
+    `${kind}.${(await hmac(keys.fingerprint, `${kind}:${value}`)).slice(0, 22)}`));
+}
+// soundex("mohammed") === soundex("muhammad") === "M530", so their "p." fingerprints are equal
+```
+
+**4. The server compares fingerprints it can't read.** Equal fingerprints mean the same name, or one that sounds the same.
+
+```js
+function fingerprintScore(a = [], b = []) {
+  const B = new Set(b);
+  const has = (kind) => a.some((x) => x.startsWith(kind) && B.has(x));
+  let first = has("f.") ? 1 : has("p.") ? 0.85 : has("3.") ? 0.8 : null;  // exact > sounds alike > same start
+  if (first === null) return null;
+  const last = has("l.") ? 1 : has("q.") ? 0.85 : 0;
+  return { first, last };
+}
+```
+
+**What actually ends up in the database** for a protected person (a real row from a test run, shortened):
+
+| name | age | neighborhood | enc | name_fp |
+|---|---|---|---|---|
+| *(empty)* | 41 | *(empty)* | `ooaQm6xmeo_mdvff.o6h…` | `{f.2jQhHC…, p.lyD9Ns…, 3.ZvT7Om…, l.hgmMj0…, q.r6JBrV…}` |
+
+Anyone reading the database sees an age, scrambled text and five fingerprints. The name only exists again on another shelter device, after a match.
+
+</details>
+
+
+**What this might not protect** 
+- Someone else can reveal your name by searching for you. A fix would be to scramble every search, at some cost to matching typos. I was not sure how i could apply this to the app for now.
 - The network phrase is one secret for the whole region. If it leaks, protected names could be read by whoever has the database. In real life it would be rotated each season and printed only on the physical shelter cards.
-- Fingerprints only work on names written in the Latin alphabet. Names in Arabic, Chinese and other scripts would need a transliteration step I didn't build.
 
 ---
 
 ## When the connection drops (or is gone for hours)
 
-My assumption: **every shelter has at least one device (a laptop or a staff phone) that gets a connection now and then.** Individuals mostly have no phone, but shelters aren't completely cut off for days.
+My assumption: **every shelter has at least one device (a laptop or a staff phone) that gets a connection now and then.** Individuals mostly have no phone but shelters aren't completely cut off for days.
 
 What happens with no connection:
 - **Everything still works on the device.** The app itself loads offline (it's a Progressive Web App with a service worker), and records save to the browser's own database (IndexedDB).
-- **Records wait in an Outbox** and send on their own: every 30 seconds, and immediately when the browser reports the connection is back. The badge always shows what's waiting, so volunteers can trust that things went through.
+- **Records wait in an Outbox** and send on their own: every 30 seconds and immediately when the browser reports the connection is back. The badge always shows what's waiting, so volunteers can trust that things went through.
 - **Sending is safe to repeat.** Each record has an id made on the device, so a half-finished send that's retried never creates duplicates.
-- **Small batches, oldest first.** On a weak connection, 20 records at a time get through more reliably, and whoever has waited longest goes first.
-- **Matches are saved on the device too,** so a volunteer can still see who to talk to after the signal drops again.
+- **Small batches, oldest first.** On a weak connection, 20 records at a time get through more reliably and whoever has waited longest goes first.
+- **Matches are saved on the device too.** A volunteer can still see who to talk to after the signal drops again.
 
 What needs a connection: **setting up a device the first time** (to check the join code), **receiving new matches**, and **sending an answer** to a match. If a shelter is completely offline for days, Tether keeps registering people but can't match them until it reconnects. For that case I'd look at carrying records out physically (for example, a signed QR code a driver scans at a supply hub), which I sketched but chose not to build.
 
@@ -147,15 +208,15 @@ What needs a connection: **setting up a device the first time** (to check the jo
 
 ## Edge cases I designed for
 
-- **No ID, so nobody can prove who they are.** Tether never treats a claim as proof. The found side is told *"someone is looking for you and says you are their daughter,"* reunions happen in person with staff, and children always get a staff decision.
+- **No ID, so nobody can prove who they are.** Tether never treats a claim as proof. The found side is told *"someone is looking for you and says you are their daughter,"* reunions happen in person with staff and children always get a staff decision.
 - **An abuser searching for someone who's hiding.** Hidden people aren't in the searchable data at all. A "no" looks exactly like "still waiting" to the searcher, so he can't tell whether the person exists.
 - **A fake shelter.** I pointed this out myself while testing the design: someone could invent a shelter, register a fake "mother," and learn where the kids are from the match. So devices can only join with a pre-registered shelter's join code, shelter ids are random (`S-7Q4K`), and no id is revealed until the found person agrees.
-- **Children say yes to anyone claiming to be their parent.** A yes never reveals a location; it only lets staff arrange a supervised meeting. And a child's own search is never counted as consent.
-- **Two people looking for each other.** Each shelter sees the pair once, and the pair only connects when both directions are yes.
+- **Children say yes to anyone claiming to be their parent.** A yes never reveals a location in the app. It only lets staff arrange a supervised meeting. And a child's own search is never counted as consent.
+- **Two people looking for each other.** Each shelter sees the pair once and the pair only connects when both directions are yes.
 - **Misspelled and shortened names, guessed ages.** Fuzzy matching on readable names (edit distance, "Leo" vs "Leonardo"), sound-alike fingerprints for protected names, and age tolerance that grows with age. It's better to suggest a few too many, because a human always confirms. But a first name alone is never enough: it also needs a matching age, last name, home neighborhood, or both people looking for each other, or every "Maria" would match every other "Maria".
 - **The same person registered twice.** The form shows "Already registered here?" as you type a name.
 - **A device that changes hands or gets lost.** PIN lock with growing delays after wrong guesses. Each device has its own revocable token, and the server only stores hashes of secrets.
-- **Volunteers asked "Is my wife here?"** The in-app guide tells them to never confirm or deny, and gives them the words to use.
+- **Volunteers asked "Is my wife here?"** The in-app guide tells them to never confirm or deny and gives them the words to use.
 
 ---
 
@@ -178,15 +239,14 @@ A second tradeoff: **volunteers, not evacuees, use the app.** That means it reac
 
 ## What I don't know, and what I'd do next
 
-There is obviously no perfect app especially in a disaster response scenario like this one. I've never worked in this area as well so a lot of this is reasoning for me and not experience. Things I'd want to learn or build:
+There is obviously no perfect app especially in a disaster response scenario like this one. I've never worked in this area as well so a lot of this is reasoning for me and not experience. Things I'd want to learn or build in the future:
 
 - **How reunification really works today.** Organizations like the Red Cross and child-protection agencies already run reunification processes, especially for children. I'd want to talk to them before deciding what Tether should do versus hand off.
 - **Real volunteers.** My only user testing was walking people through it during DALI help hours. I'd want to watch real volunteers use it during a drill.
-- **Languages.** The interface is English only, and many evacuees won't speak English. Translation, and the non-Latin-name problem above, are the biggest gaps for immigrant families.
-- **Legal questions.** Who can consent for a child, and what if a parent has a custody order? Tether flags children for staff, but the rules are a legal question I can't answer.
+- **Languages.** The interface is English only and many evacuees won't speak English. Translation and the non-Latin-name problem above, can be the biggest gaps for immigrant families. I designed this assuming the shelters were in the US. Would love to expand this to other countries. 
+- **Legal questions.** Who can consent for a child and what if a parent has a custody order? Tether flags children for staff but the rules are a legal question I don't know the answer to yet.
 - **A safety flag.** A hidden person could leave a note like *"don't reunite my children with this person without review,"* which would hold any matching request from that person. I designed it but didn't build it.
 - **Encrypting records on the device itself.** The PIN locks the screen, but the saved records aren't encrypted with it yet. Someone with technical skills and the device could still read them.
-- **Rotating secrets, and more scale.** Join codes and the network phrase are fixed for the demo. Matching compares new records against everything, which is fine for thousands of people but would need indexing for a region of 400,000.
 
 ---
 
