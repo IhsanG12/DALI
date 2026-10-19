@@ -52,7 +52,7 @@ Tether follows one person from the moment they walk into a shelter until they're
 ### 1. Setting up a shelter device
 A volunteer opens Tether on the shelter's laptop or phone and **scans the QR code on the shelter's card** (or types the join code and network phrase from it). The server checks the join code against the list of registered shelters, so only real shelters can join. The network phrase stays on the device and is never sent. The volunteer picks a **PIN**, and Tether locks itself after 5 minutes without use so a device left on a table doesn't show who is in the shelter.
 
-![Setup](docs/screenshots/1-setup.png)
+<img src="docs/screenshots/1-setup.png" width="180" alt="Setup">
 
 ### 2. Registering a person
 The volunteer fills in one short form. **Only the name is required**, and a nickname or description is fine. The rest is optional:
@@ -68,12 +68,12 @@ Then the volunteer asks the **privacy question**:
 
 Saving takes a second and works with no internet. The form clears and jumps back to the name field for the next person in line. If a similar name is already registered at that shelter, Tether shows *"Already registered here?"* to avoid duplicates.
 
-![Add a person](docs/screenshots/2-add-person.png)
+<img src="docs/screenshots/2-add-person.png" width="180" alt="Add a person">
 
 ### 3. Sending, with or without a connection
 Every record is saved **on the device first**. Tether tries to send waiting records every 30 seconds, and immediately when the connection comes back. Only a small "match card" leaves the shelter: the details needed to find family, minus anything the person chose to protect or hide. The badge at the top always shows what's waiting (*"3 to send"* / *"All sent"*). When the signal only lasts a moment, **Send and check for matches now** sends everything right away.
 
-![People here](docs/screenshots/3-people-here.png)
+<img src="docs/screenshots/3-people-here.png" width="180" alt="People here">
 
 ### 4. Matching
 When cards arrive, the server compares **who each person is looking for** against **everyone registered at every shelter**. Names will be misspelled and ages guessed, so it scores each possible match instead of demanding an exact one:
@@ -86,12 +86,12 @@ A first name alone is never enough. Hidden people are never in the list of peopl
 ### 5. Asking the person first
 A match goes to the volunteer at the **found person's** shelter, never to the person searching. Their **Matches** tab shows who to find and where they are in that shelter, who is asking and what relationship they claim, and a **script** to read to them privately. The volunteer records **Yes** or **No**. If the found person is **under 18**, Tether says a staff member makes the decision, not the child alone.
 
-![Match request](docs/screenshots/4-match-request.png)
+<img src="docs/screenshots/4-match-request.png" width="180" alt="Match request">
 
 ### 6. Connecting
 Only after a yes does each shelter see the **other shelter's ID** (for example `S-MX48`). It never sees a location or the shelter's name, and families never see it at all. The volunteer gives the ID to their coordinator, who contacts the other shelter to arrange a **supervised reunion at a neutral place**. If the answer was no, the searching side keeps seeing *"waiting,"* so they can't tell whether the person exists.
 
-![Connected](docs/screenshots/5-connected.png)
+<img src="docs/screenshots/5-connected.png" width="180" alt="Connected">
 
 ### 7. The built-in guide
 A **Guide** button at the top walks volunteers through all of this, including the privacy question, what to say when a match comes in, and safety rules like *never confirm or deny whether someone is at the shelter*.
