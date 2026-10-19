@@ -329,10 +329,29 @@ async function ensurePreloadedShelters() {
   }
 }
 
+// ---------- clearing out demo data ----------
+//
+// Everyone trying the live demo shares the same preloaded shelters, so old
+// test records would pile up and match each other. Records are erased after
+// DEMO_DATA_TTL_MINUTES (default 60), along with their searches and matches,
+// so each reviewer starts clean. A real deployment would keep records for the
+// whole response and set DEMO_DATA_TTL_MINUTES=off.
+async function clearOldDemoData() {
+  const ttl = process.env.DEMO_DATA_TTL_MINUTES ?? "60";
+  if (ttl === "off") return;
+  const { rowCount } = await pool.query(
+    "DELETE FROM cards WHERE received_at < now() - make_interval(mins => $1::int)",
+    [Number(ttl) || 60]
+  );
+  if (rowCount) console.log(`Cleared ${rowCount} demo record(s) older than ${ttl} minutes`);
+}
+
 const PORT = process.env.PORT || 3001;
 
 await setupDatabase();
 await ensurePreloadedShelters();
+await clearOldDemoData();
+setInterval(() => clearOldDemoData().catch((err) => console.error(err)), 5 * 60 * 1000);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

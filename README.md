@@ -250,7 +250,7 @@ There is obviously no perfect app especially in a disaster response scenario lik
 4. At St. Mary's, add *Lina Haddad, 9*, looking for *Muhammad Haddad, father*.
 5. In each window, open **Outbox** and tap **Send and check for matches now**, then open **Matches** at St. Mary's.
 
-The free server sleeps when idle, so give the first request up to a minute.
+The free server sleeps when idle, so give the first request up to a minute. Everyone trying the demo shares these shelters, so **demo records are erased after an hour** to give each reviewer a clean start.
 
 <details>
 <summary>All preloaded shelters</summary>
