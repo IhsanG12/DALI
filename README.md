@@ -182,11 +182,7 @@ Anyone reading the database sees an age, scrambled text and five fingerprints. T
 
 ## When the connection drops (or is gone for hours)
 
-My assumption: **every shelter has at least one device (a laptop or a staff phone) that gets a connection now and then.** Individuals mostly have no phone but shelters aren't completely cut off for days.
-
-What happens with no connection:
-- **Everything still works on the device.** The app itself loads offline (it's a Progressive Web App with a service worker), and records save to the browser's own database (IndexedDB).
-- **Records wait in an Outbox** and send on their own: every 30 seconds and immediately when the browser reports the connection is back. The badge always shows what's waiting, so volunteers can trust that things went through.
+Beyond saving everything on the device first (step 3 above), a few details make weak connections safe:
 - **Sending is safe to repeat.** Each record has an id made on the device, so a half-finished send that's retried never creates duplicates.
 - **Small batches, oldest first.** On a weak connection, 20 records at a time get through more reliably and whoever has waited longest goes first.
 - **Matches are saved on the device too.** A volunteer can still see who to talk to after the signal drops again.
@@ -208,13 +204,9 @@ What needs a connection: **setting up a device the first time** (to check the jo
 
 ## Edge cases I designed for
 
-- **No ID, so nobody can prove who they are.** Tether never treats a claim as proof. The found side is told *"someone is looking for you and says you are their daughter,"* reunions happen in person with staff and children always get a staff decision.
 - **An abuser searching for someone who's hiding.** Hidden people aren't in the searchable data at all. A "no" looks exactly like "still waiting" to the searcher, so he can't tell whether the person exists.
 - **A fake shelter.** I pointed this out myself while testing the design: someone could invent a shelter, register a fake "mother," and learn where the kids are from the match. So devices can only join with a pre-registered shelter's join code, shelter ids are random (`S-7Q4K`), and no id is revealed until the found person agrees.
-- **Children say yes to anyone claiming to be their parent.** A yes never reveals a location in the app. It only lets staff arrange a supervised meeting. And a child's own search is never counted as consent.
 - **Two people looking for each other.** Each shelter sees the pair once and the pair only connects when both directions are yes.
-- **Misspelled and shortened names, guessed ages.** Fuzzy matching on readable names (edit distance, "Leo" vs "Leonardo"), sound-alike fingerprints for protected names, and age tolerance that grows with age. It's better to suggest a few too many, because a human always confirms. But a first name alone is never enough: it also needs a matching age, last name, home neighborhood, or both people looking for each other, or every "Maria" would match every other "Maria".
-- **The same person registered twice.** The form shows "Already registered here?" as you type a name.
 - **A device that changes hands or gets lost.** PIN lock with growing delays after wrong guesses. Each device has its own revocable token, and the server only stores hashes of secrets.
 - **Volunteers asked "Is my wife here?"** The in-app guide tells them to never confirm or deny and gives them the words to use.
 
