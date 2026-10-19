@@ -285,7 +285,7 @@ In a real deployment these would be random and only printed on the shelter cards
 
 ## How I used AI
 
-I came into this project knowing C and a little Python, so Claude wrote most of the JavaScript and I made it explain each piece before we moved on. I used Claude throughout, as a collaborator I argued with. The design decisions that matter most came from pushing back on its first answers. For example, I caught that revealing a shelter's ID too early would let an abuser locate children, and that a child saying yes isn't real consent. The full log of what I asked, what I changed and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
+I came into this project knowing mostly C and little Java, so Claude wrote most of the JavaScript and I made it explain each piece before we moved on. I used Claude throughout as a collaborator I argued with. The design decisions that matter most came from pushing back on its first answers. The full log of what I asked, what I changed and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
 
 ---
 
