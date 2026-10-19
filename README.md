@@ -1,6 +1,6 @@
 # Tether
 
-**Helping families separated by a hurricane evacuation find each other, run by shelter volunteers, built for bad connections and for people who can't afford to be found by the wrong person.**
+**The word tether refers to the line that keeps two things connected across a distance. This is what our app does helping families scattered around to different shelters reconnect after a natural disaster like hurricanes.**
 
 **Live app:** https://dashing-yeot-662880.netlify.app
 **Try it in two minutes:** see [Try a match yourself](#try-a-match-yourself).
@@ -13,41 +13,25 @@
 
 ---
 
-## Overview
+## Overview / Assumptions
 
-Most people in this scenario have no phone and no ID, so an app they use themselves wouldn't reach them. The people who *can* use an app are the shelter volunteers. Tether is a tool for those volunteers:
+The most important part of developing this project was the set of assumptions I made about the situation. Every design decision follows from one of these. 
 
-1. A volunteer **registers** each person: name (or a description), rough age, home neighborhood, who they're looking for, and where they are in the shelter. It takes about 30 seconds, and only the name is required.
-2. Records are **saved on the device first** and sent whenever the shelter's connection comes back.
-3. The server **matches** who people are looking for against everyone registered, even with misspellings ("Mohammed" and "Muhammad") and rough ages.
-4. When there's a match, the volunteer at the found person's shelter **asks them privately** whether they want to connect. Nothing is shared until they say yes, and even then **no location is ever shared**: each shelter only learns the other's id so staff can arrange a supervised reunion.
+1. **Tether was set up before hurricane season.** Emergency management registered every official shelter ahead of time and gave each one a printed card with a join code and QR code. *This is why only real shelters can join and why nobody can invent a shelter to fish for information.*
+
+2. **Every shelter has at least one device that gets a connection now and then.** It could be a laptop or a staff member's phone, with Wi-Fi that comes and goes. Most *individuals* have no working phone but shelters aren't cut off for days. *This is why everything saves on the device locally first and sends whenever a connection appears.*
+
+3. **Volunteers use the app, not evacuees.** Evacuees have no phones and are in crisis, so a volunteer does the typing for them. Volunteers are stretched thin and not technical. *This is why only a name is required, saving takes seconds, and the app tells volunteers exactly what to say.*
+
+4. **Nobody can prove who they are.** There's no ID, so anyone can claim to be anyone's parent. *This is why Tether treats every claim as unconfirmed, never shares locations and leaves the final check to staff, in person.*
+
+5. **Each shelter has staff or a coordinator who can talk to other shelters.** If they know which shelter to call, they can arrange a supervised reunion. *This is why a match only ever reveals the other shelter's ID, and only after the found person says yes.*
+
+6. **Information will be rough.** Names will be misspelled or shortened, ages guessed, and some people will give only a nickname. *This is why matching is fuzzy, compares how names sound, and always ends with a person confirming.*
+
+7. **The region shares one secret network phrase, handed out on paper.** It's printed on each shelter card and never typed into or stored on our server. *This is how shelter devices can read protected names while our server can't.*
 
 Every person also gets a privacy choice: **normal**, **protect name** (our own server can't read it), or **keep hidden** (nobody can search for them, but they can still search for others).
-
----
-
-## A night at Lincoln High: the walkthrough
-
-It's 2 a.m. at the Lincoln High School gym. Ana is volunteering with a laptop that gets Wi-Fi every so often. A line of worried people is waiting.
-
-**Setting up.** When the shelter opened, Ana scanned the QR code on the shelter's card ([screenshot](docs/screenshots/1-setup.png)). The card holds Lincoln High's join code, which proves it's a real, pre-registered shelter, and the region's network phrase, which never leaves shelter devices (more on that below). She picked a PIN. Tether locks itself after five minutes so a laptop left on a table doesn't show who's here.
-
-**Mohammed.** First in line is Mohammed, 41. His daughter Lina, 9, was at school when the buses left. He has no phone and no ID, and he hesitates to give his name because he's undocumented. Ana asks the privacy question from Tether's guide and he chooses **Protect name**. She types what he tells her, notes he's on *Gym, Row C, Cot 12*, and saves. It takes about thirty seconds, and the cursor jumps back to the name field for the next person.
-
-**Maria.** Next is Maria, 34. She is looking for her son Leo, 7. Quietly, she says she left an abusive husband. Ana ticks **Keep hidden**: nobody can search for Maria, but Maria can still search for Leo.
-
-**No connection.** The Wi-Fi is down. Ana keeps going, and the badge at the top says *3 to send*. At 2:40 the connection comes back for a few minutes, everything sends on its own, and the badge turns to *All sent* ([screenshot](docs/screenshots/3-people-here.png)).
-
-**Across town at St. Mary's Parish Hall,** Ben registered Lina hours ago with her class. She's looking for her dad, and Ben spelled it the way she said it: *Muhammad*. When St. Mary's next connects, its **Matches** tab shows two requests ([screenshot](docs/screenshots/4-match-request.png)):
-
-- *"Mohammed Haddad (name protected) is looking for Lina Haddad, who they say is their daughter."* Our server matched them without ever reading Mohammed's name. Only Ben's device can unscramble it.
-- *"Someone who asked to stay hidden is looking for Leo Garcia, who they say is their son."* That's Maria. Nothing about her is shown, because nothing about her ever left Lincoln High.
-
-Both kids are under 18, so Tether tells Ben a **staff member** makes the decision, not the child alone. Ben reads the script on the card to Lina privately, his supervisor agrees, and he taps **Yes, connect**.
-
-**Connected.** Now, and only now, each shelter sees the other's id ([screenshot](docs/screenshots/5-connected.png)). Not a location, not the shelter's name. Ben hands the id to his coordinator, who calls Lincoln High's coordinator and sets up a supervised reunion at a neutral place.
-
-**What Carlos sees.** Suppose Maria's husband Carlos shows up at another shelter looking for Maria and Leo. His search for Maria finds nothing, because she's hidden. His search for Leo reaches St. Mary's, and if staff say no, Carlos still just sees *"waiting"*. He can't even tell that Leo is registered.
 
 ---
 
@@ -55,11 +39,62 @@ Both kids are under 18, so Tether tells Ben a **staff member** makes the decisio
 
 | Who | What they need | How Tether serves them |
 |---|---|---|
-| **Shelter volunteers** (the actual users) | Not technical, exhausted, constantly interrupted. Something that works the first time, offline, at 2 a.m. | One short form, only the name required, saves instantly with no connection, a script for every match, and a built-in [guide](docs/screenshots/6-guide.png). |
-| **Evacuees** (served through volunteers) | To find family without a phone or ID, and without putting themselves at risk. | Someone else does the typing. They choose what's shared, and nothing is shared without their yes. |
-| **Shelter coordinators / staff** | To make the final call on reunions, especially for children. | Matches involving children are marked as staff decisions. Connected matches give them the other shelter's id, which is all they need to coordinate. |
+| **Shelter volunteers** (the actual users) | Volunteers in the shelters are the ones with access to the app. They are not technical, possibly exhausted and constantly interrupted. They are in communication with everyone in the shelter.| This is why the app has one short form with only the name required, saves instantly with no connection, a script for every match, and a built-in [guide](docs/screenshots/6-guide.png). |
+| **Evacuees** (served through volunteers) | They are trying to find family without a phone or ID and often without putting themselves at risk. | They choose what's shared and nothing is shared without their yes. |
+| **Shelter coordinators / staff** | This can be people specifically on this role or the same volunteers that use the app depending on shelter availability. They make the final call on reunions, especially for children. | Matches involving children are marked as staff decisions. Connected matches give them the other shelter's id, which is all they need to coordinate. |
 
 ---
+
+## How the app works
+
+Tether follows one person from the moment they walk into a shelter until they're reconnected with family. Every step happens through a shelter volunteer.
+
+### 1. Setting up a shelter device
+A volunteer opens Tether on the shelter's laptop or phone and **scans the QR code on the shelter's card** (or types the join code and network phrase from it). The server checks the join code against the list of registered shelters, so only real shelters can join. The network phrase stays on the device and is never sent. The volunteer picks a **PIN**, and Tether locks itself after 5 minutes without use so a device left on a table doesn't show who is in the shelter.
+
+![Setup](docs/screenshots/1-setup.png)
+
+### 2. Registering a person
+The volunteer fills in one short form. **Only the name is required**, and a nickname or description is fine. The rest is optional:
+- rough age and home neighborhood
+- **who they're looking for** (name, relationship, age), with more than one allowed
+- who they were with when they got separated
+- **where they are in the shelter** (cot, row, room), which **never leaves the device**
+
+Then the volunteer asks the **privacy question**:
+- **Normal:** family can find them.
+- **Protect name:** family can still find them, but the name is scrambled before it leaves the device, so our own server can't read it.
+- **Keep hidden:** nobody can search for them, but they can still search for others.
+
+Saving takes a second and works with no internet. The form clears and jumps back to the name field for the next person in line. If a similar name is already registered at that shelter, Tether shows *"Already registered here?"* to avoid duplicates.
+
+![Add a person](docs/screenshots/2-add-person.png)
+
+### 3. Sending, with or without a connection
+Every record is saved **on the device first**. Tether tries to send waiting records every 30 seconds, and immediately when the connection comes back. Only a small "match card" leaves the shelter: the details needed to find family, minus anything the person chose to protect or hide. The badge at the top always shows what's waiting (*"3 to send"* / *"All sent"*). When the signal only lasts a moment, **Send and check for matches now** sends everything right away.
+
+![People here](docs/screenshots/3-people-here.png)
+
+### 4. Matching
+When cards arrive, the server compares **who each person is looking for** against **everyone registered at every shelter**. Names will be misspelled and ages guessed, so it scores each possible match instead of demanding an exact one:
+- first names that match or are similar ("Leo" and "Leonardo," "Mohammed" and "Muhammad")
+- last name, age within a reasonable range, and home neighborhood
+- a big bonus when **two people are looking for each other**
+
+A first name alone is never enough. Hidden people are never in the list of people who can be found.
+
+### 5. Asking the person first
+A match goes to the volunteer at the **found person's** shelter, never to the person searching. Their **Matches** tab shows who to find and where they are in that shelter, who is asking and what relationship they claim, and a **script** to read to them privately. The volunteer records **Yes** or **No**. If the found person is **under 18**, Tether says a staff member makes the decision, not the child alone.
+
+![Match request](docs/screenshots/4-match-request.png)
+
+### 6. Connecting
+Only after a yes does each shelter see the **other shelter's ID** (for example `S-MX48`). It never sees a location or the shelter's name, and families never see it at all. The volunteer gives the ID to their coordinator, who contacts the other shelter to arrange a **supervised reunion at a neutral place**. If the answer was no, the searching side keeps seeing *"waiting,"* so they can't tell whether the person exists.
+
+![Connected](docs/screenshots/5-connected.png)
+
+### 7. The built-in guide
+A **Guide** button at the top walks volunteers through all of this, including the privacy question, what to say when a match comes in, and safety rules like *never confirm or deny whether someone is at the shelter*.
 
 ## Immigrants and people afraid of being identified
 
