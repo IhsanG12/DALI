@@ -170,15 +170,15 @@ What needs a connection: **setting up a device the first time** (to check the jo
 | Crypto | **Web Crypto (PBKDF2, HMAC-SHA-256, AES-GCM)** | Built into every browser, so no extra library to trust. |
 | Hosting | **Netlify** (frontend), **Render** (backend) | Free. Render's free server sleeps when idle, so **the first request can take up to a minute**. |
 
-**The biggest tradeoff: privacy vs. findability.** Every protection costs some matches. A hidden mother can't be found by her own kids, only the other way around. A protected name can only be matched by fingerprints, which catch "Mohammed/Muhammad" but miss typos a human would catch. I chose to let each person decide, and made the safe choices easy to pick, because a missed match can be fixed later but a wrong reveal can't be undone.
+**The biggest tradeoff: privacy vs. findability.** Every protection we have on the app costs some matches. A hidden mother can't be found by her own kids, only the other way around. A protected name can only be matched by fingerprints, which catch "Mohammed/Muhammad" but miss typos a human would catch. I chose to let each person decid, and made the safe choices easy to pick, because a missed match can be fixed later but a wrong reveal can't be undone.
 
-A second tradeoff: **volunteers, not evacuees, use the app.** That means it reaches people with no phone, but everything runs through a stretched-thin human. That's why the form has only one required field and everything else is designed to take seconds.
+A second tradeoff: **volunteers, not evacuees, use the app.** That means it reaches people with no phone, but everything runs through a volunteer who is very busy. That's why the form has only one required field and everything else is designed to take seconds.
 
 ---
 
 ## What I don't know, and what I'd do next
 
-I've never worked in disaster response, so a lot of this is reasoning, not experience. Things I'd want to learn or build:
+There is obviously no perfect app especially in a disaster response scenario like this one. I've never worked in this area as well so a lot of this is reasoning for me and not experience. Things I'd want to learn or build:
 
 - **How reunification really works today.** Organizations like the Red Cross and child-protection agencies already run reunification processes, especially for children. I'd want to talk to them before deciding what Tether should do versus hand off.
 - **Real volunteers.** My only user testing was walking people through it during DALI help hours. I'd want to watch real volunteers use it during a drill.
@@ -223,7 +223,7 @@ In a real deployment these would be random and only printed on the shelter cards
 
 ## How I used AI
 
-I used Claude throughout, as a collaborator I argued with, not a code generator I trusted. I came in knowing only C, so Claude wrote most of the JavaScript, and I made it explain each piece before we moved on. The design decisions that matter most came from pushing back on its first answers. For example, I caught that revealing shelter ids would let an abuser locate children, and that consent alone doesn't protect a child. The full log of what I asked, what I changed, and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
+I came in to this project knowing C and a little bit python, so Claude wrote most of the JavaScript and I made it explain each piece before we moved on. I used Claude throughout, as a collaborator I argued with. The design decisions that matter most came from pushing back on its first answers. The full log of what I asked, what I changed and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
 
 ---
 
