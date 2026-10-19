@@ -197,14 +197,12 @@ What needs a connection: **setting up a device the first time** (to check the jo
 
 ## The full picture: what I built, and how the rest would work
 
-**What I built (this repo):** the volunteer-facing core, from registration and offline sync to matching, consent, privacy, shelter verification, and the guide. I chose this slice because every other part of the system depends on getting people's records in safely, and on matches never putting anyone in danger. If that core is wrong, nothing else matters.
+**What I built:** the volunteer-facing core, from registration and offline sync to matching, consent, privacy and shelter verification. I chose this slice because every other part of the system depends on getting people's records in safely, and on matches never putting anyone in danger.
 
-**How the rest would work:**
-- **Before hurricane season (setup).** Emergency management registers every designated shelter, prints each one a card with its join code and QR, and sets the region's network phrase. *I assumed this happened. The app comes preloaded with eight shelters.* Coordinators can add shelters later through an admin endpoint protected by a secret key.
-- **People not in shelters** (hotels, relatives' homes). A phone hotline whose operators use the same app as a "virtual shelter," so anyone with any phone can register or search.
-- **Institutions** (schools, nursing homes, other agencies moving people). They could upload rosters directly as records from their own "shelter," so a child moved with their school or an elderly parent moved by a different agency shows up without anyone having to register them by hand.
-- **Paper records.** Many shelters will start on clipboards. The form mirrors a paper intake sheet, so volunteers can type them in later. Photographing sheets and reading them automatically would be a natural next step.
-- **Reunions.** Tether stops at "both sides agreed; here's the other shelter's id." The actual reunion, including checking that someone is who they say they are, happens in person with staff, which is where it belongs when nobody has ID.
+**How the rest would plug in.** Each of these would feed records into the same matching, so nothing about the core would change:
+- **People not in shelters** (hotels, relatives' homes): a phone hotline whose operators use Tether as a "virtual shelter," so anyone with any phone can register or search.
+- **Institutions** (schools, nursing homes, agencies moving people): upload their rosters directly, so a child moved with their school or an elderly parent moved by a different agency shows up without anyone registering them by hand.
+- **Paper records:** shelters that start on clipboards can type sheets in later, since the form mirrors a paper intake sheet. Photographing sheets and reading them automatically would be a natural next step.
 
 ---
 
