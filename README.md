@@ -1,6 +1,6 @@
 # Tether
 
-**The word tether refers to the line that keeps two things connected across a distance. This is what our app does helping families scattered around to different shelters reconnect after a natural disaster like hurricanes.**
+**The word tether refers to the line that keeps two things connected across a distance. That's what Tether does: it helps families scattered across different shelters reconnect after a disaster like a hurricane.**
 
 **Live app:** https://dashing-yeot-662880.netlify.app
 **Try it in two minutes:** see [Try a match yourself](#try-a-match-yourself).
@@ -90,6 +90,8 @@ Only after a yes does each shelter see the **other shelter's ID** (for example `
 ### 7. The built-in guide
 A **Guide** button at the top walks volunteers through all of this, including the privacy question, what to say when a match comes in, and safety rules like *never confirm or deny whether someone is at the shelter*.
 
+---
+
 ## Immigrants and people afraid of being identified
 
 This was the hardest group to design for and the one I focused on most after feedback during DALI help hours. An undocumented person may not want *anyone*, including the people running Tether, to have their name even in the database.
@@ -103,7 +105,7 @@ So **Protect name** means the name is scrambled **on the shelter device, before 
 | **Keep hidden** | Everything | **Nothing about them.** Only scrambled fingerprints of who *they* are looking for (plus relationship and rough age) | Only "someone who asked to stay hidden" |
 
 <details>
-<summary><b>This is the technical bit as to how our server match names it can't read?</b> (click to see the code)</summary>
+<summary><b>How does our server match names it can't read?</b> (click to see the code)</summary>
 
 <br>
 
@@ -173,7 +175,7 @@ Anyone reading the database sees an age, scrambled text and five fingerprints. T
 
 
 **What this might not protect** 
-- Someone else can reveal your name by searching for you. A fix would be to scramble every search, at some cost to matching typos. I was not sure how i could apply this to the app for now.
+- If someone searches for a protected person by name and the searcher's own record isn't protected, that search name is stored readably, so someone else can reveal your name by searching for you. A fix would be to scramble every search, at some cost to matching typos. I wasn't sure how to do that without hurting matching, so I left it for now.
 - The network phrase is one secret for the whole region. If it leaks, protected names could be read by whoever has the database. In real life it would be rotated each season and printed only on the physical shelter cards.
 
 ---
@@ -231,7 +233,7 @@ What needs a connection: **setting up a device the first time** (to check the jo
 | Crypto | **Web Crypto (PBKDF2, HMAC-SHA-256, AES-GCM)** | Built into every browser, so no extra library to trust. |
 | Hosting | **Netlify** (frontend), **Render** (backend) | Free. Render's free server sleeps when idle, so **the first request can take up to a minute**. |
 
-**The biggest tradeoff: privacy vs. findability.** Every protection we have on the app costs some matches. A hidden mother can't be found by her own kids, only the other way around. A protected name can only be matched by fingerprints, which catch "Mohammed/Muhammad" but miss typos a human would catch. I chose to let each person decid, and made the safe choices easy to pick, because a missed match can be fixed later but a wrong reveal can't be undone.
+**The biggest tradeoff: privacy vs. findability.** Every protection we have on the app costs some matches. A hidden mother can't be found by her own kids, only the other way around. A protected name can only be matched by fingerprints, which catch "Mohammed/Muhammad" but miss typos a human would catch. I chose to let each person decide, and made the safe choices easy to pick, because a missed match can be fixed later but a wrong reveal can't be undone.
 
 A second tradeoff: **volunteers, not evacuees, use the app.** That means it reaches people with no phone, but everything runs through a volunteer who is very busy. That's why the form has only one required field and everything else is designed to take seconds.
 
@@ -243,7 +245,7 @@ There is obviously no perfect app especially in a disaster response scenario lik
 
 - **How reunification really works today.** Organizations like the Red Cross and child-protection agencies already run reunification processes, especially for children. I'd want to talk to them before deciding what Tether should do versus hand off.
 - **Real volunteers.** My only user testing was walking people through it during DALI help hours. I'd want to watch real volunteers use it during a drill.
-- **Languages.** The interface is English only and many evacuees won't speak English. Translation and the non-Latin-name problem above, can be the biggest gaps for immigrant families. I designed this assuming the shelters were in the US. Would love to expand this to other countries. 
+- **Languages.** The interface is English only, and many evacuees won't speak English. Name fingerprints also only work for names in the Latin alphabet, so names written in Arabic or Chinese, for example, would need a transliteration step. These are the biggest gaps for immigrant families. I designed this assuming the shelters were in the US, and I'd love to expand it to other countries.
 - **Legal questions.** Who can consent for a child and what if a parent has a custody order? Tether flags children for staff but the rules are a legal question I don't know the answer to yet.
 - **A safety flag.** A hidden person could leave a note like *"don't reunite my children with this person without review,"* which would hold any matching request from that person. I designed it but didn't build it.
 - **Encrypting records on the device itself.** The PIN locks the screen, but the saved records aren't encrypted with it yet. Someone with technical skills and the device could still read them.
@@ -283,7 +285,7 @@ In a real deployment these would be random and only printed on the shelter cards
 
 ## How I used AI
 
-I came in to this project knowing C and a little bit python, so Claude wrote most of the JavaScript and I made it explain each piece before we moved on. I used Claude throughout, as a collaborator I argued with. The design decisions that matter most came from pushing back on its first answers. The full log of what I asked, what I changed and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
+I came into this project knowing C and a little Python, so Claude wrote most of the JavaScript and I made it explain each piece before we moved on. I used Claude throughout, as a collaborator I argued with. The design decisions that matter most came from pushing back on its first answers. For example, I caught that revealing a shelter's ID too early would let an abuser locate children, and that a child saying yes isn't real consent. The full log of what I asked, what I changed and what the AI got wrong is in **[AI_NOTES.md](AI_NOTES.md)**.
 
 ---
 
