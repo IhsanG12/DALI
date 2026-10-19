@@ -87,9 +87,19 @@ export async function syncNow() {
   if (!device) return { ok: false, message: "This device isn't set up." };
   running = true;
   try {
+    const mine = await localDb.people.where("shelterId").equals(device.shelterId).toArray();
+
+    // Removals first: someone who asked to be taken out should leave the
+    // server as soon as possible.
+    const removals = mine.filter((p) => p.removed).map((p) => p.id);
+    if (removals.length) {
+      const { removed } = await request("/api/cards/remove", { method: "POST", body: { ids: removals } });
+      await localDb.people.bulkDelete(removed);
+    }
+
     // Oldest first, so nobody waits forever behind newer records.
-    const pending = (await localDb.people.where("shelterId").equals(device.shelterId).toArray())
-      .filter((p) => p.syncStatus === "pending")
+    const pending = mine
+      .filter((p) => p.syncStatus === "pending" && !p.removed)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
     // Small batches: on a weak connection, small requests are more likely to
@@ -140,6 +150,14 @@ export function getCachedMatches() {
 
 export async function answerMatch(id, answer) {
   return request(`/api/matches/${id}/answer`, { method: "POST", body: { answer } });
+}
+
+// Remove a person from this shelter. If they were never sent, they're simply
+// deleted here. Otherwise they're hidden right away and the removal is sent
+// with the next connection.
+export async function removePerson(p) {
+  if (p.syncStatus === "pending") await localDb.people.delete(p.id);
+  else await localDb.people.update(p.id, { removed: true });
 }
 
 export function getLastSyncAt() {

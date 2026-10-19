@@ -205,3 +205,10 @@ ul.cards li.match.yes { border-left-color: var(--safe); }
 /* Keep the top bar's layout even if an extension injects generic rules. */
 .tt-top { display: block !important; width: 100% !important; transform: none !important; }
 .tt-top-inner { display: flex !important; width: auto !important; }
+
+/* Removing a person */
+.remove-link { align-self: flex-end; color: var(--danger); margin-top: 4px; }
+.remove-confirm { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.remove-confirm .row { display: flex; gap: 8px; }
+.remove-confirm .row button { flex: 1; }
+button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }

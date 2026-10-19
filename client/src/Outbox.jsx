@@ -6,7 +6,7 @@ import { ShowQr, joinQrText } from "./Qr.jsx";
 
 export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend, onLeave }) {
   const pending =
-    useLiveQuery(async () => (await localDb.people.where("shelterId").equals(currentShelterId()).sortBy("createdAt")).filter((p) => p.syncStatus === "pending"), []) || [];
+    useLiveQuery(async () => (await localDb.people.where("shelterId").equals(currentShelterId()).sortBy("createdAt")).filter((p) => p.syncStatus === "pending" || p.removed), []) || [];
 
   return (
     <div className="stack">
@@ -24,14 +24,20 @@ export default function Outbox({ device, syncing, lastResult, lastSyncAt, onSend
       </button>
       {lastResult && <p className={lastResult.ok ? "ok" : "error"}>{lastResult.message}</p>}
 
-      {pending.length > 0 && (
+      {pending.some((p) => p.removed) && (
+        <p className="muted">
+          {pending.filter((p) => p.removed).length} removal(s) waiting to send.
+        </p>
+      )}
+
+      {pending.some((p) => !p.removed) && (
         <>
           <h3>What will be sent</h3>
           <p className="muted">
             Only what's needed to find a match. Where someone is in the shelter never leaves this device.
           </p>
           <ul className="cards">
-            {pending.map((p) => (
+            {pending.filter((p) => !p.removed).map((p) => (
               <li key={p.id}>
                 {p.hidden ? (
                   <strong>Hidden person <span className="muted">(nothing about them is sent)</span></strong>

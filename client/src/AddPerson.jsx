@@ -47,7 +47,7 @@ export default function AddPerson({ onSaved }) {
   const typed = form.name.trim().toLowerCase();
   const similar = useLiveQuery(async () => {
     if (typed.length < 3) return [];
-    const all = await localDb.people.where("shelterId").equals(currentShelterId()).toArray();
+    const all = await (await localDb.people.where("shelterId").equals(currentShelterId()).toArray()).filter((p) => !p.removed);
     const words = typed.split(/\s+/).filter((w) => w.length >= 3);
     return all.filter((p) => words.some((w) => p.name.toLowerCase().includes(w))).slice(0, 3);
   }, [typed]);

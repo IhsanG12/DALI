@@ -33,7 +33,7 @@ export default function App() {
     useLiveQuery(
       async () =>
         shelterId
-          ? (await localDb.people.where("shelterId").equals(shelterId).toArray()).filter((p) => p.syncStatus === "pending").length
+          ? (await localDb.people.where("shelterId").equals(shelterId).toArray()).filter((p) => p.syncStatus === "pending" || p.removed).length
           : 0,
       [shelterId]
     ) ?? 0;
@@ -159,7 +159,7 @@ export default function App() {
       <main>
         {tab === "guide" && <Guide onClose={() => setTab("add")} />}
         {tab === "add" && <AddPerson onSaved={send} />}
-        {tab === "people" && <PeopleList />}
+        {tab === "people" && <PeopleList onChanged={send} />}
         {tab === "matches" && <Matches matches={matches} onChanged={send} />}
         {tab === "outbox" && (
           <Outbox

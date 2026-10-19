@@ -164,6 +164,20 @@ app.post("/api/cards", requireDevice, async (req, res) => {
   res.json({ accepted });
 });
 
+// ---------- removing people ----------
+//
+// A volunteer can remove someone: a duplicate, someone who left the shelter,
+// or someone who asked to be taken out. Their card, searches and matches are
+// deleted. A device can only remove people registered at its own shelter.
+app.post("/api/cards/remove", requireDevice, async (req, res) => {
+  const ids = (Array.isArray(req.body.ids) ? req.body.ids : []).filter((id) => UUID.test(id || "")).slice(0, 200);
+  if (ids.length) {
+    await pool.query("DELETE FROM cards WHERE id = ANY($1::uuid[]) AND shelter_id = $2", [ids, req.device.shelter_id]);
+  }
+  // Report every id as handled, including ones that never reached the server.
+  res.json({ removed: ids });
+});
+
 // ---------- matching ----------
 //
 // Compare new cards against everything already received, in both directions:

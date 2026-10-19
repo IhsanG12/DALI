@@ -15,6 +15,7 @@ export default function Guide({ onClose }) {
           <li>Ask who they're looking for, and who they were with when they got separated. Rough ages are fine.</li>
           <li>Write where they are in the shelter (cot, row, room). That never leaves this device.</li>
           <li>Ask the privacy question below, then tap <strong>Save</strong>. It saves instantly, even without internet.</li>
+          <li>Registered someone twice, or someone left or asked to be taken out? Open <strong>People here</strong> and tap <strong>Remove</strong>. Their searches and matches are deleted too.</li>
         </ol>
       </section>
 

@@ -60,7 +60,7 @@ Then the volunteer asks the **privacy question**:
 - **Protect name:** family can still find them, but the name is scrambled before it leaves the device, so our own server can't read it.
 - **Keep hidden:** nobody can search for them, but they can still search for others.
 
-Saving takes a second and works with no internet. The form clears and jumps back to the name field for the next person in line. If a similar name is already registered at that shelter, Tether shows *"Already registered here?"* to avoid duplicates.
+Saving takes a second and works with no internet. The form clears and jumps back to the name field for the next person in line. If a similar name is already registered at that shelter, Tether shows *"Already registered here?"* to avoid duplicates. Anyone can be **removed** later from *People here* (a duplicate, someone who left, or anyone who asks); their searches and matches are deleted from the server too, even if the removal has to wait for a connection.
 
 <img src="docs/screenshots/2-add-person.png" width="180" alt="Add a person">
 
