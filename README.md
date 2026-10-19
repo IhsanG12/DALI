@@ -5,12 +5,6 @@
 **Live app:** https://dashing-yeot-662880.netlify.app
 **Try it in two minutes:** see [Try a match yourself](#try-a-match-yourself).
 
-<p>
-  <img src="docs/screenshots/2-add-person.png" width="210" alt="Registering a person, with privacy choices">
-  <img src="docs/screenshots/4-match-request.png" width="210" alt="A match waiting for the found person's answer">
-  <img src="docs/screenshots/5-connected.png" width="210" alt="Both sides agreed: only the other shelter's id is revealed">
-</p>
-
 ---
 
 ## Overview / Assumptions
