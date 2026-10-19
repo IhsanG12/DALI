@@ -109,7 +109,7 @@ So **Protect name** means the name is scrambled **on the shelter device, before 
 
 <br>
 
-Every shelter device in the region shares a secret **network phrase**, printed on the shelter cards and inside their QR codes. It **never goes to the server**: each device turns it into two keys locally, one to **scramble** protected details and one to make **fingerprints** of names. The server can tell that two fingerprints are equal, but it can't turn one back into a name. Full code: [`client/src/privacy.js`](https://github.com/IhsanG12/DALI/blob/main/client/src/privacy.js) (device) and [`server/matching.js`](https://github.com/IhsanG12/DALI/blob/main/server/matching.js) (server).
+Every shelter device in the region shares a secret **network phrase**, printed on the shelter cards and inside their QR codes. It **never goes to the server**: each device turns it into two keys locally, one to **scramble** protected details and one to make **fingerprints** of names. The server can tell that two fingerprints are equal, but it can't turn one back into a name. Full code: [`client/src/privacy.js`](https://github.com/IhsanG12/TETHER/blob/main/client/src/privacy.js) (device) and [`server/matching.js`](https://github.com/IhsanG12/TETHER/blob/main/server/matching.js) (server).
 
 **1. The phrase becomes two keys, on the device.** PBKDF2 runs 200,000 rounds on purpose, so guessing phrases is slow.
 
